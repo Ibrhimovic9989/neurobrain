@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a2e;
+  --accent: #6c63ff;
+  --accent-glow: rgba(108, 99, 255, 0.3);
+  --text-primary: #e4e4e7;
+  --text-secondary: #a1a1aa;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.glass-card {
+  background: rgba(26, 26, 46, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(108, 99, 255, 0.15);
+  border-radius: 16px;
+}
+
+.glow {
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.brain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.network-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), #ff6b6b);
+  transition: width 0.8s ease-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
+  50% { box-shadow: 0 0 40px var(--accent-glow); }
+}
+
+.animate-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
