@@ -74,10 +74,9 @@ function PredictSection() {
   const handlePredict = async (text: string) => {
     setLoading(true);
     try {
-      const API = process.env.NEXT_PUBLIC_API_URL || "";
       const form = new FormData();
       form.append("text", text);
-      const res = await fetch(`${API}/api/predict`, { method: "POST", body: form });
+      const res = await fetch(`/api/predict`, { method: "POST", body: form });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setImages(data.images || []);
@@ -133,10 +132,9 @@ function CompareSection() {
   const handleCompare = async (text: string) => {
     setLoading(true);
     try {
-      const API = process.env.NEXT_PUBLIC_API_URL || "";
       const form = new FormData();
       form.append("text", text);
-      const res = await fetch(`${API}/api/compare`, { method: "POST", body: form });
+      const res = await fetch(`/api/compare`, { method: "POST", body: form });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setProfile(data.estimated_divergence || data.sensory_profile);
@@ -176,8 +174,7 @@ function ConnectivitySection() {
   const handleLoad = async () => {
     setLoading(true);
     try {
-      const API = process.env.NEXT_PUBLIC_API_URL || "";
-      const res = await fetch(`${API}/api/connectivity`);
+      const res = await fetch(`/api/connectivity`);
       if (!res.ok) throw new Error(await res.text());
       setData(await res.json());
     } catch (e: any) {
