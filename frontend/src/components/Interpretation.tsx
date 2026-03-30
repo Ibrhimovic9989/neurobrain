@@ -16,13 +16,13 @@ export default function Interpretation({ data, context }: InterpretationProps) {
     setLoading(true);
     setText("");
 
-    const form = new FormData();
-    form.append("context", context);
-    form.append("data", JSON.stringify(data));
-
     fetch(
       "https://neurobrain-api.eastus.cloudapp.azure.com/api/interpret",
-      { method: "POST", body: form }
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ context, data }),
+      }
     )
       .then((res) => res.json())
       .then((result) => setText(result.interpretation || ""))

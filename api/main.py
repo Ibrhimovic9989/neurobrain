@@ -426,19 +426,71 @@ Be warm, practical, and frame neurodiversity positively."""
 
 
 @app.post("/api/interpret")
-async def interpret_results(
-    context: str = Form("predict"),
-    data: str = Form(...),
-):
+async def interpret_results(request: dict):
     """Generate plain-language interpretation of brain analysis results."""
-    import json
     try:
-        parsed = json.loads(data)
-        interpretation = generate_interpretation(parsed, context)
+        context = request.get("context", "predict")
+        data = request.get("data", {})
+        interpretation = generate_interpretation(data, context)
+        if not interpretation:
+            interpretation = _fallback_interpretation(data, context)
         return {"interpretation": interpretation}
     except Exception as e:
         logger.error(f"Interpretation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _fallback_interpretation(data: dict, context: str) -> str:
+    """Generate interpretation without LLM if API fails."""
+    if context == "connectivity":
+        net_diffs = data.get("network_differences", {})
+        names = {
+            "Vis": "Visual", "SomMot": "Movement", "DorsAttn": "Attention",
+            "SalVentAttn": "Salience", "Limbic": "Emotional",
+            "Cont": "Control", "Default": "Default Mode",
+        }
+        sorted_nets = sorted(net_diffs.items(), key=lambda x: -x[1])
+        top = sorted_nets[0] if sorted_nets else ("", 0)
+        n_asd = data.get("asd_subjects", 0)
+        n_td = data.get("td_subjects", 0)
+        return (
+            f"Analysis of {n_asd} autistic and {n_td} non-autistic brain scans "
+            f"reveals that the {names.get(top[0], top[0])} network shows the "
+            f"largest connectivity differences (score: {top[1]:.4f}). "
+            f"This means autistic brains organize communication between "
+            f"{names.get(top[0], top[0]).lower()} regions differently. "
+            f"These differences aren't deficits -- they represent alternative "
+            f"neural wiring that can bring unique strengths in perception, "
+            f"pattern recognition, and focused attention. Understanding these "
+            f"patterns helps design better accommodations and learning tools."
+        )
+    elif context == "predict":
+        regions = data.get("top_active_regions", [])
+        hemi = regions[0].get("hemisphere", "right") if regions else "right"
+        return (
+            f"The brain model predicted activity across {data.get('vertices', 20484):,} "
+            f"surface points over {data.get('timesteps', 0)} seconds. "
+            f"The strongest activation is in the {hemi} hemisphere, "
+            f"in regions associated with language and auditory processing. "
+            f"In autistic brains, these same regions may activate with "
+            f"different intensity or timing, reflecting unique sensory "
+            f"processing patterns."
+        )
+    elif context == "compare":
+        profile = data.get("estimated_divergence", data.get("sensory_profile", {}))
+        sorted_p = sorted(profile.items(), key=lambda x: -x[1])
+        top3 = [f"{k} ({v:.0%})" for k, v in sorted_p[:3]]
+        return (
+            f"The biggest processing differences are in: {', '.join(top3)}. "
+            f"This means autistic brains handle these types of sensory "
+            f"information most differently. For example, higher social "
+            f"processing divergence may explain why social cues feel "
+            f"overwhelming. These insights can guide personalized "
+            f"accommodations -- like quieter environments for high auditory "
+            f"divergence, or visual schedules for those with different "
+            f"default mode processing."
+        )
+    return "Interpretation unavailable."
 
 
 if __name__ == "__main__":
