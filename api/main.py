@@ -152,6 +152,7 @@ async def predict_brain(text: str = Form(...)):
         top_vertices = np.argsort(mean_activation)[-10:][::-1]
 
         return {
+            "stimulus_text": text,
             "timesteps": n_steps,
             "vertices": int(preds.shape[1]),
             "value_range": [float(preds.min()), float(preds.max())],
@@ -337,27 +338,37 @@ async def compare_models(text: str = Form(...)):
 
 
 def generate_interpretation(data: dict, context: str = "predict") -> str:
-    """Generate plain-language interpretation of brain results using HF Inference API."""
-    from huggingface_hub import InferenceClient
+    """Generate plain-language interpretation of brain results using Azure OpenAI."""
+    from openai import AzureOpenAI
 
-    client = InferenceClient()
+    client = AzureOpenAI(
+        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2025-04-01-preview"),
+    )
+    deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5.2-chat")
 
     if context == "predict":
+        stimulus = data.get('stimulus_text', 'unknown stimulus')
+        regions = data.get('top_active_regions', [{}])
+        hemi = regions[0].get('hemisphere', 'right') if regions else 'right'
         prompt = f"""You are a neuroscientist explaining brain scan results to a non-expert.
 
-A brain encoding model (TRIBE v2) predicted how the brain responds to this stimulus. Here are the results:
-- {data.get('timesteps', 0)} seconds of brain activity predicted
-- {data.get('vertices', 20484):,} brain surface points measured
+The stimulus was: "{stimulus}"
+
+A brain encoding model (TRIBE v2, 177M parameters) predicted how a neurotypical brain responds. Results:
+- {data.get('timesteps', 0)} seconds of brain activity predicted across {data.get('vertices', 20484):,} brain surface points
 - Mean activation level: {data.get('mean_activation', 0):.4f}
 - Value range: {data.get('value_range', [0,0])}
-- Most active regions are in the {'right' if data.get('top_active_regions', [{}])[0].get('hemisphere') == 'right' else 'left'} hemisphere
+- Most active regions are in the {hemi} hemisphere
 
-Explain in 3-4 simple sentences:
-1. What brain regions are most active and what they do
-2. What this tells us about how the brain processes this input
-3. One insight about neurodiversity (how this might differ in an autistic brain)
+Explain in 4-5 simple sentences:
+1. What the stimulus "{stimulus}" would trigger in the brain specifically (which regions and why)
+2. What the activation pattern tells us about how the brain processes this specific input
+3. How an autistic brain might process this same stimulus differently (be specific to this stimulus)
+4. What accommodation might help if this stimulus is part of daily life
 
-Keep it simple, like explaining to a 15-year-old."""
+Be specific to the stimulus. Don't be generic. Keep it warm and simple."""
 
     elif context == "compare":
         profile = data.get("estimated_divergence", data.get("sensory_profile", {}))
@@ -413,13 +424,16 @@ Explain in 5-6 simple sentences:
 Be warm, practical, and frame neurodiversity positively."""
 
     try:
-        response = client.text_generation(
-            prompt,
-            model="mistralai/Mistral-7B-Instruct-v0.3",
-            max_new_tokens=400,
+        response = client.chat.completions.create(
+            model=deployment,
+            messages=[
+                {"role": "system", "content": "You are a neuroscientist who explains brain science in simple, warm language. Be concise, practical, and frame neurodiversity positively."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=500,
             temperature=0.7,
         )
-        return response.strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         logger.warning(f"LLM interpretation failed: {e}")
         return ""
