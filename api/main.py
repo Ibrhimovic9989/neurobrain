@@ -205,15 +205,22 @@ async def get_connectivity(n_subjects: int = 20):
     """Get precomputed ASD vs TD connectivity comparison."""
     global _abide_results
 
+    # Check disk cache first
+    cache_file = Path.home() / "neurobrain_connectivity_cache.json"
     if _abide_results is not None:
+        return _abide_results
+    if cache_file.exists():
+        import json
+        _abide_results = json.loads(cache_file.read_text())
         return _abide_results
 
     try:
         from tribev2.neurodiverse.download import AbideDownloader
         from nilearn import datasets
 
-        # Download ABIDE data
-        abide = AbideDownloader(output_dir="./data/abide")
+        # Use existing data or download
+        data_dir = Path.home() / "data" / "abide"
+        abide = AbideDownloader(output_dir=str(data_dir))
         phenotypic = abide.download_abide1(n_subjects=n_subjects * 3)
 
         # Compute connectivity
@@ -255,6 +262,11 @@ async def get_connectivity(n_subjects: int = 20):
             "td_mean": results["td_mean"].tolist(),
             "difference": results["difference"].tolist(),
         }
+
+        # Cache to disk so it survives restarts
+        import json
+        cache_file.write_text(json.dumps(_abide_results))
+        logger.info("Connectivity results cached to %s", cache_file)
 
         return _abide_results
     except Exception as e:
