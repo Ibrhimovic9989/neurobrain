@@ -74,9 +74,14 @@ export default function Interpretation({ data, context }: InterpretationProps) {
           Generating interpretation...
         </div>
       ) : (
-        <p className="text-[var(--text-primary)] leading-relaxed whitespace-pre-line">
-          {text}
-        </p>
+        <div
+          className="text-[var(--text-primary)] leading-relaxed prose prose-invert prose-sm max-w-none"
+          dangerouslySetInnerHTML={{
+            __html: text
+              .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+              .replace(/\n/g, "<br />"),
+          }}
+        />
       )}
     </div>
   );

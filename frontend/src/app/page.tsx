@@ -7,6 +7,7 @@ import ConnectivityChart from "@/components/ConnectivityChart";
 import SensoryProfile from "@/components/SensoryProfile";
 import Header from "@/components/Header";
 import Interpretation from "@/components/Interpretation";
+import BrainComparison from "@/components/BrainComparison";
 
 type TabId = "predict" | "compare" | "connectivity";
 
@@ -175,6 +176,7 @@ function CompareSection() {
           </div>
         </div>
       )}
+      {result && <BrainComparison result={result} />}
       {profile && <SensoryProfile profile={profile} />}
       {result && <Interpretation data={result} context="compare" />}
     </div>
