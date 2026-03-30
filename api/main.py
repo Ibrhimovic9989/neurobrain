@@ -75,10 +75,15 @@ def brain_to_image(preds, timestep=0):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    from nilearn import datasets, plotting, surface
+    from nilearn import datasets, plotting
 
     fsaverage = datasets.fetch_surf_fsaverage("fsaverage5")
     data = preds[timestep] if preds.ndim == 2 else preds
+
+    # Use per-timestep adaptive threshold for better contrast
+    abs_data = np.abs(data)
+    vmax = np.percentile(abs_data, 98)
+    threshold = np.percentile(abs_data, 60)
 
     fig, axes = plt.subplots(1, 4, figsize=(20, 5),
                               subplot_kw={"projection": "3d"})
@@ -98,8 +103,10 @@ def brain_to_image(preds, timestep=0):
 
         plotting.plot_surf_stat_map(
             mesh, hemi_data, hemi=hemi, view=view,
-            bg_map=bg, colorbar=False, threshold=0.1,
-            cmap="hot", axes=ax,
+            bg_map=bg, colorbar=False,
+            threshold=threshold, vmax=vmax,
+            cmap="cold_hot", symmetric_cbar=True,
+            axes=ax,
         )
 
     plt.tight_layout()
