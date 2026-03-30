@@ -105,6 +105,12 @@ export default function BrainComparison({ result }: BrainComparisonProps) {
               <th className="text-left py-3 px-2 text-[var(--text-secondary)]">
                 Function
               </th>
+              <th className="text-center py-3 px-2 text-[var(--success)]">
+                NT Response
+              </th>
+              <th className="text-center py-3 px-2 text-[var(--warning)]">
+                ND Response
+              </th>
               <th className="text-center py-3 px-2 text-[var(--text-secondary)]">
                 Difference
               </th>
@@ -130,14 +136,32 @@ export default function BrainComparison({ result }: BrainComparisonProps) {
               const level =
                 pct > 70 ? "High" : pct > 40 ? "Moderate" : "Low";
 
+              // NT baseline is "standard" activation, ND is altered
+              const ntLevel = "Standard";
+              const ndAlteration = pct > 70 ? "Significantly altered" : pct > 40 ? "Moderately altered" : "Slightly altered";
+              const ndDirection = pct > 50 ? "Heightened sensitivity" : pct > 30 ? "Different pattern" : "Similar to NT";
+
               return (
                 <tr
                   key={key}
                   className="border-b border-white/5 hover:bg-white/5 transition"
                 >
                   <td className="py-3 px-2 font-medium">{info.label}</td>
-                  <td className="py-3 px-2 text-[var(--text-secondary)]">
+                  <td className="py-3 px-2 text-[var(--text-secondary)] text-xs">
                     {info.description}
+                  </td>
+                  <td className="py-3 px-2 text-center">
+                    <span className="text-xs px-2 py-1 rounded-full bg-[var(--success)]/15 text-[var(--success)]">
+                      {ntLevel}
+                    </span>
+                  </td>
+                  <td className="py-3 px-2 text-center">
+                    <span className="text-xs px-2 py-1 rounded-full" style={{
+                      background: `${barColor}22`,
+                      color: barColor,
+                    }}>
+                      {ndDirection}
+                    </span>
                   </td>
                   <td className="py-3 px-2">
                     <div className="flex items-center gap-2 justify-center">
