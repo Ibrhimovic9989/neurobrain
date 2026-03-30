@@ -13,42 +13,56 @@ interface BrainComparisonProps {
 
 const NETWORK_INFO: Record<
   string,
-  { label: string; description: string; impact: string }
+  { label: string; description: string; impact: string; ntExample: string; ndExample: string }
 > = {
   motor: {
     label: "Motor / Body",
     description: "Movement, body awareness, coordination",
     impact: "May show different movement patterns, stimming, or motor planning",
+    ntExample: "Hears a loud sound → brain registers it, body stays relaxed",
+    ndExample: "Hears a loud sound → body tenses, may flinch, cover ears, or need to move",
   },
   visual: {
     label: "Visual",
     description: "Processing what you see",
     impact: "May notice details others miss, or find busy scenes overwhelming",
+    ntExample: "Walks into a mall → takes in the whole scene, filters out clutter",
+    ndExample: "Walks into a mall → notices every flickering light, every sign, can feel flooded",
   },
   attention: {
     label: "Attention",
     description: "Focusing and shifting focus",
     impact: "May hyperfocus on interests or struggle to shift attention",
+    ntExample: "Teacher says 'now open your books' → switches tasks smoothly",
+    ndExample: "Teacher says 'now open your books' → still processing the last topic, transition feels abrupt",
   },
   salience: {
     label: "Salience",
     description: "Deciding what's important",
     impact: "May prioritize different things as important vs background",
+    ntExample: "In a meeting → focuses on the speaker, tunes out the AC hum",
+    ndExample: "In a meeting → the AC hum feels as loud as the speaker, hard to filter",
   },
   emotional: {
     label: "Emotional",
     description: "Processing feelings and reactions",
     impact: "May experience emotions more intensely or differently",
+    ntExample: "Friend seems sad → feels concern, offers comfort proportionally",
+    ndExample: "Friend seems sad → absorbs their emotion fully, may feel overwhelmed or shut down",
   },
   control: {
     label: "Control",
     description: "Planning, decision-making",
     impact: "May prefer routine and predictability over spontaneous changes",
+    ntExample: "Lunch plans change → 'sure, let's go somewhere else instead'",
+    ndExample: "Lunch plans change → feels disorienting, needs a moment to mentally rebuild the plan",
   },
   default_mode: {
     label: "Default Mode",
     description: "Self-reflection, imagination",
     impact: "May show different patterns of inner thought and self-awareness",
+    ntExample: "Waiting for the bus → mind wanders casually between random topics",
+    ndExample: "Waiting for the bus → deep-dives into one thought, builds a rich detailed inner world",
   },
 };
 
@@ -105,6 +119,12 @@ export default function BrainComparison({ result }: BrainComparisonProps) {
               <th className="text-left py-3 px-2 text-[var(--text-secondary)]">
                 Function
               </th>
+              <th className="text-left py-3 px-2 text-[var(--success)]">
+                NT Example
+              </th>
+              <th className="text-left py-3 px-2 text-[var(--warning)]">
+                ND Example
+              </th>
               <th className="text-center py-3 px-2 text-[var(--success)]">
                 NT Response
               </th>
@@ -149,6 +169,12 @@ export default function BrainComparison({ result }: BrainComparisonProps) {
                   <td className="py-3 px-2 font-medium">{info.label}</td>
                   <td className="py-3 px-2 text-[var(--text-secondary)] text-xs">
                     {info.description}
+                  </td>
+                  <td className="py-3 px-2 text-xs text-[var(--success)]" style={{ maxWidth: "200px" }}>
+                    {info.ntExample}
+                  </td>
+                  <td className="py-3 px-2 text-xs text-[var(--warning)]" style={{ maxWidth: "200px" }}>
+                    {info.ndExample}
                   </td>
                   <td className="py-3 px-2 text-center">
                     <span className="text-xs px-2 py-1 rounded-full bg-[var(--success)]/15 text-[var(--success)]">
