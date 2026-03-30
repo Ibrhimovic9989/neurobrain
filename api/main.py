@@ -37,13 +37,26 @@ _abide_results = None
 def get_model():
     global _model
     if _model is None:
+        import torch
         from tribev2 import TribeModel
-        device = "cuda" if os.environ.get("USE_GPU", "1") == "1" else "cpu"
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Loading TRIBE v2 on {device}...")
+
+        # Force all feature extractors to use the same device
+        config_update = {}
+        if device == "cpu":
+            os.environ["CUDA_VISIBLE_DEVICES"] = ""
+            config_update = {
+                "data.text_feature.device": "cpu",
+                "data.audio_feature.device": "cpu",
+                "data.num_workers": 0,
+            }
+
         _model = TribeModel.from_pretrained(
             "facebook/tribev2",
             cache_folder="./cache",
             device=device,
+            config_update=config_update,
         )
         logger.info("TRIBE v2 loaded")
     return _model
