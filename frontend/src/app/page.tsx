@@ -76,7 +76,7 @@ function PredictSection() {
     try {
       const form = new FormData();
       form.append("text", text);
-      const res = await fetch(`/api/predict`, { method: "POST", body: form });
+      const res = await fetch(`https://neurobrain-api.eastus.cloudapp.azure.com/api/predict`, { method: "POST", body: form });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setImages(data.images || []);
@@ -134,7 +134,7 @@ function CompareSection() {
     try {
       const form = new FormData();
       form.append("text", text);
-      const res = await fetch(`/api/compare`, { method: "POST", body: form });
+      const res = await fetch(`https://neurobrain-api.eastus.cloudapp.azure.com/api/compare`, { method: "POST", body: form });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setProfile(data.estimated_divergence || data.sensory_profile);
@@ -174,7 +174,7 @@ function ConnectivitySection() {
   const handleLoad = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/connectivity`);
+      const res = await fetch(`https://neurobrain-api.eastus.cloudapp.azure.com/api/connectivity`);
       if (!res.ok) throw new Error(await res.text());
       setData(await res.json());
     } catch (e: any) {
