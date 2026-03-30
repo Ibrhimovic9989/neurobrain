@@ -218,7 +218,7 @@ async def get_connectivity(n_subjects: int = 20):
 
         # Compute connectivity
         analyzer = get_analyzer()
-        connectivity = analyzer.batch_connectivity(
+        connectivity = analyzer.batch_project_and_connect(
             phenotypic, max_subjects=n_subjects
         )
 
