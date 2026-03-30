@@ -282,62 +282,82 @@ async def get_connectivity(n_subjects: int = 20):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+_nd_transform = None
+
+
+def get_nd_transform():
+    """Load the neurodiverse transform trained on ABIDE data."""
+    global _nd_transform
+    if _nd_transform is None:
+        import torch
+        from huggingface_hub import hf_hub_download
+        path = hf_hub_download("Ibrahim9989/neurobrain-nd-transform", "neurodiverse_transform_v3.pt")
+        _nd_transform = torch.load(path, map_location="cpu", weights_only=True)
+        logger.info("Neurodiverse transform loaded (%d ASD, %d TD subjects)",
+                     _nd_transform["n_asd"], _nd_transform["n_td"])
+    return _nd_transform
+
+
 @app.post("/api/compare")
 async def compare_models(text: str = Form(...)):
-    """Compare neurotypical vs neurodiverse brain predictions.
-
-    Requires a fine-tuned neurodiverse model checkpoint.
-    """
+    """Compare neurotypical vs neurodiverse brain predictions."""
     try:
-        nt_model = get_model()
+        model = get_model()
+        transform = get_nd_transform()
 
-        # Check if neurodiverse model exists
-        nd_checkpoint = os.environ.get("ND_MODEL_PATH", "./models/neurodiverse/best.ckpt")
-        if not Path(nd_checkpoint).exists():
-            # Return simulated comparison using ABIDE connectivity data
-            # until fine-tuned model is available
-            prediction = await predict_brain(text)
-
-            return {
-                "status": "simulated",
-                "message": "Fine-tuned neurodiverse model not yet available. Showing neurotypical prediction with ABIDE-derived divergence estimates.",
-                "nt_prediction": prediction,
-                "estimated_divergence": {
-                    "visual": 0.85,
-                    "auditory": 0.62,
-                    "language": 0.71,
-                    "default_mode": 0.78,
-                    "motor": 0.35,
-                    "social": 0.91,
-                },
-            }
-
-        from tribev2 import TribeModel
-        from tribev2.neurodiverse.comparison import NeurodiverseComparison
-
-        nd_model = TribeModel.from_pretrained(nd_checkpoint, device="cuda")
-        comparison = NeurodiverseComparison(nt_model, nd_model)
-
+        # Get NT prediction
         os.makedirs("./tmp", exist_ok=True)
-        with open("./tmp/compare_input.txt", "w") as f:
+        text_path = "./tmp/compare_input.txt"
+        with open(text_path, "w") as f:
             f.write(text)
 
-        events = nt_model.get_events_dataframe(text_path="./tmp/compare_input.txt")
-        nt_preds, nd_preds = comparison.predict_both(events, verbose=False)
+        events = model.get_events_dataframe(text_path=text_path)
+        nt_preds, segments = model.predict(events, verbose=False)
 
-        divergence = comparison.compute_divergence_map(nt_preds, nd_preds)
-        profile = comparison.sensory_profile(nt_preds, nd_preds)
+        # Apply ABIDE-derived transform: NT -> ND
+        scale = transform["vertex_scale"].numpy()
+        shift = transform["vertex_shift"].numpy()
+        nd_preds = nt_preds * scale + shift
+
+        # Compute divergence
+        divergence = np.mean((nt_preds - nd_preds) ** 2, axis=0)
+
+        # Network-level divergence profile
+        roi_effect = transform["roi_effect"].numpy()
+        roi_labels = transform["roi_labels"]
+        network_map = {
+            "Vis": "visual", "SomMot": "motor", "DorsAttn": "attention",
+            "SalVentAttn": "salience", "Limbic": "emotional",
+            "Cont": "control", "Default": "default_mode",
+        }
+        profile = {}
+        for label, effect in zip(roi_labels, roi_effect):
+            for short, full in network_map.items():
+                if short in label:
+                    profile.setdefault(full, []).append(float(effect))
+                    break
+        profile = {k: float(np.mean(v)) for k, v in profile.items()}
+        max_p = max(profile.values()) or 1.0
+        profile = {k: v / max_p for k, v in profile.items()}
+
+        # Generate brain images for both
+        n_steps = min(nt_preds.shape[0], 8)
+        nt_images = [brain_to_image(nt_preds, t) for t in range(n_steps)]
+        nd_images = [brain_to_image(nd_preds, t) for t in range(n_steps)]
 
         return {
             "status": "real",
+            "stimulus_text": text,
             "sensory_profile": profile,
             "divergence_stats": {
                 "mean": float(divergence.mean()),
                 "max": float(divergence.max()),
-                "min": float(divergence.min()),
             },
-            "nt_images": [brain_to_image(nt_preds, t) for t in range(min(5, nt_preds.shape[0]))],
-            "nd_images": [brain_to_image(nd_preds, t) for t in range(min(5, nd_preds.shape[0]))],
+            "nt_images": nt_images,
+            "nd_images": nd_images,
+            "timesteps": n_steps,
+            "n_asd_subjects": int(transform["n_asd"]),
+            "n_td_subjects": int(transform["n_td"]),
         }
     except Exception as e:
         logger.error(f"Comparison failed: {e}", exc_info=True)

@@ -139,7 +139,7 @@ function CompareSection() {
       const res = await fetch(`https://neurobrain-api.eastus.cloudapp.azure.com/api/compare`, { method: "POST", body: form });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      setProfile(data.estimated_divergence || data.sensory_profile);
+      setProfile(data.sensory_profile);
       setResult(data);
     } catch (e: any) {
       alert("Comparison failed: " + e.message);
@@ -156,12 +156,23 @@ function CompareSection() {
         placeholder="Enter text to compare NT vs ND brain response..."
         buttonText="Compare Brains"
       />
-      {result?.status === "simulated" && (
-        <div className="glass-card p-4 border-[var(--warning)] border">
-          <p className="text-[var(--warning)] text-sm">
-            Showing estimated divergence from ABIDE data. Fine-tuned model
-            will provide real per-stimulus comparison.
-          </p>
+      {result?.nt_images && result?.nd_images && (
+        <div className="space-y-6">
+          <div className="glass-card p-4">
+            <p className="text-sm text-[var(--text-secondary)] text-center">
+              Based on {result.n_asd_subjects} ASD and {result.n_td_subjects} TD brain scans from the ABIDE dataset
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="glass-card p-4">
+              <h4 className="text-center font-semibold mb-3 text-[var(--success)]">Neurotypical Brain</h4>
+              <BrainViewer images={result.nt_images} />
+            </div>
+            <div className="glass-card p-4">
+              <h4 className="text-center font-semibold mb-3 text-[var(--warning)]">Neurodiverse Brain (ASD)</h4>
+              <BrainViewer images={result.nd_images} />
+            </div>
+          </div>
         </div>
       )}
       {profile && <SensoryProfile profile={profile} />}
