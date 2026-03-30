@@ -6,6 +6,7 @@ import TextInput from "@/components/TextInput";
 import ConnectivityChart from "@/components/ConnectivityChart";
 import SensoryProfile from "@/components/SensoryProfile";
 import Header from "@/components/Header";
+import Interpretation from "@/components/Interpretation";
 
 type TabId = "predict" | "compare" | "connectivity";
 
@@ -120,6 +121,7 @@ function PredictSection() {
         </div>
       )}
       {images.length > 0 && <BrainViewer images={images} />}
+      {stats && <Interpretation data={stats} context="predict" />}
     </div>
   );
 }
@@ -163,6 +165,7 @@ function CompareSection() {
         </div>
       )}
       {profile && <SensoryProfile profile={profile} />}
+      {result && <Interpretation data={result} context="compare" />}
     </div>
   );
 }
@@ -203,6 +206,7 @@ function ConnectivitySection() {
         </button>
       </div>
       {data && <ConnectivityChart data={data} />}
+      {data && <Interpretation data={data} context="connectivity" />}
     </div>
   );
 }

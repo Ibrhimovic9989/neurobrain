@@ -336,6 +336,111 @@ async def compare_models(text: str = Form(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def generate_interpretation(data: dict, context: str = "predict") -> str:
+    """Generate plain-language interpretation of brain results using HF Inference API."""
+    from huggingface_hub import InferenceClient
+
+    client = InferenceClient()
+
+    if context == "predict":
+        prompt = f"""You are a neuroscientist explaining brain scan results to a non-expert.
+
+A brain encoding model (TRIBE v2) predicted how the brain responds to this stimulus. Here are the results:
+- {data.get('timesteps', 0)} seconds of brain activity predicted
+- {data.get('vertices', 20484):,} brain surface points measured
+- Mean activation level: {data.get('mean_activation', 0):.4f}
+- Value range: {data.get('value_range', [0,0])}
+- Most active regions are in the {'right' if data.get('top_active_regions', [{}])[0].get('hemisphere') == 'right' else 'left'} hemisphere
+
+Explain in 3-4 simple sentences:
+1. What brain regions are most active and what they do
+2. What this tells us about how the brain processes this input
+3. One insight about neurodiversity (how this might differ in an autistic brain)
+
+Keep it simple, like explaining to a 15-year-old."""
+
+    elif context == "compare":
+        profile = data.get("estimated_divergence", data.get("sensory_profile", {}))
+        sorted_nets = sorted(profile.items(), key=lambda x: -x[1])
+        top_3 = ", ".join([f"{k} ({v:.0%})" for k, v in sorted_nets[:3]])
+        bottom_2 = ", ".join([f"{k} ({v:.0%})" for k, v in sorted_nets[-2:]])
+
+        prompt = f"""You are a neuroscientist explaining how autistic brains process information differently.
+
+A brain model comparison shows these divergence scores between neurotypical and neurodiverse processing:
+- Highest differences: {top_3}
+- Lowest differences: {bottom_2}
+
+Full scores: {dict(sorted_nets)}
+
+Explain in 4-5 simple sentences:
+1. Which sensory systems show the biggest differences
+2. What this means in daily life (concrete examples)
+3. How this knowledge could help design better accommodations
+4. Frame this positively - different processing, not deficient
+
+Keep it warm, hopeful, and practical. Like explaining to a parent."""
+
+    elif context == "connectivity":
+        net_diffs = data.get("network_differences", {})
+        n_asd = data.get("asd_subjects", 0)
+        n_td = data.get("td_subjects", 0)
+        sorted_nets = sorted(net_diffs.items(), key=lambda x: -x[1])
+
+        network_names = {
+            "Vis": "Visual", "SomMot": "Somatomotor (body/movement)",
+            "DorsAttn": "Dorsal Attention (focus)", "SalVentAttn": "Salience (what matters)",
+            "Limbic": "Limbic (emotions)", "Cont": "Control (planning)",
+            "Default": "Default Mode (daydreaming/self)",
+        }
+        readable = [(network_names.get(k, k), v) for k, v in sorted_nets]
+
+        prompt = f"""You are a neuroscientist explaining brain connectivity differences in autism.
+
+We analyzed real fMRI brain scans from {n_asd} autistic and {n_td} non-autistic people (ABIDE dataset).
+We measured how strongly different brain networks communicate with each other.
+
+Network connectivity differences (higher = more different in autism):
+{chr(10).join([f"- {name}: {val:.4f}" for name, val in readable])}
+
+Explain in 5-6 simple sentences:
+1. Which brain networks show the biggest wiring differences
+2. What each network does in plain language
+3. What these differences mean for daily life
+4. Why this matters for understanding autism
+5. How this could help (therapy, accommodations, tools)
+
+Be warm, practical, and frame neurodiversity positively."""
+
+    try:
+        response = client.text_generation(
+            prompt,
+            model="mistralai/Mistral-7B-Instruct-v0.3",
+            max_new_tokens=400,
+            temperature=0.7,
+        )
+        return response.strip()
+    except Exception as e:
+        logger.warning(f"LLM interpretation failed: {e}")
+        return ""
+
+
+@app.post("/api/interpret")
+async def interpret_results(
+    context: str = Form("predict"),
+    data: str = Form(...),
+):
+    """Generate plain-language interpretation of brain analysis results."""
+    import json
+    try:
+        parsed = json.loads(data)
+        interpretation = generate_interpretation(parsed, context)
+        return {"interpretation": interpretation}
+    except Exception as e:
+        logger.error(f"Interpretation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
