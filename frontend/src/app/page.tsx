@@ -1,283 +1,280 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import BrainViewer from "@/components/BrainViewer";
-import TextInput from "@/components/TextInput";
-import ConnectivityChart from "@/components/ConnectivityChart";
-import SensoryProfile from "@/components/SensoryProfile";
-import Header from "@/components/Header";
-import Interpretation from "@/components/Interpretation";
-import BrainComparison from "@/components/BrainComparison";
-import NeuralBackground from "@/components/NeuralBackground";
-import HeroSection from "@/components/HeroSection";
-import FeatureCards from "@/components/FeatureCards";
-import TechShowcase from "@/components/TechShowcase";
-import Footer from "@/components/Footer";
+import { useState, useRef, useEffect, ReactNode } from "react";
+
+const API = "https://neurobrain-api.eastus.cloudapp.azure.com/api";
+
+function useReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) el.querySelectorAll(".reveal").forEach((c) => c.classList.add("visible")); }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return ref;
+}
+
+function S({ children, id }: { children: ReactNode; id?: string }) {
+  const ref = useReveal();
+  return <section ref={ref} id={id} className="py-24 px-6">{children}</section>;
+}
+
+function Dv() { return <div className="h-px bg-[var(--border)] max-w-[1024px] mx-auto" />; }
 
 type TabId = "predict" | "compare" | "connectivity";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabId>("predict");
-  const workspaceRef = useRef<HTMLDivElement>(null);
-
-  const tabs: { id: TabId; label: string; desc: string; icon: React.ReactNode }[] = [
-    {
-      id: "predict",
-      label: "Brain Prediction",
-      desc: "See how the brain responds to text or video in real-time",
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-    },
-    {
-      id: "compare",
-      label: "NT vs ND",
-      desc: "Compare neurotypical and neurodiverse brain responses side-by-side",
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ),
-    },
-    {
-      id: "connectivity",
-      label: "ASD Connectivity",
-      desc: "Analyze brain wiring differences in autism using real fMRI data",
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-        </svg>
-      ),
-    },
-  ];
-
-  const scrollToWorkspace = () => {
-    workspaceRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const handleFeatureSelect = (id: string) => {
-    setActiveTab(id as TabId);
-    setTimeout(() => scrollToWorkspace(), 100);
-  };
+  const [tab, setTab] = useState<TabId>("predict");
+  const workRef = useRef<HTMLDivElement>(null);
 
   return (
-    <main className="min-h-screen noise-overlay">
-      <NeuralBackground />
-      <Header />
-
-      {/* Hero */}
-      <HeroSection onExplore={scrollToWorkspace} />
-
-      {/* Divider */}
-      <div className="section-divider" />
-
-      {/* Feature Cards */}
-      <FeatureCards onSelect={handleFeatureSelect} />
-
-      {/* Divider */}
-      <div className="section-divider" />
-
-      {/* Tech Showcase */}
-      <TechShowcase />
-
-      {/* Divider */}
-      <div className="section-divider" />
-
-      {/* Workspace Section */}
-      <section ref={workspaceRef} className="relative py-24 px-6" id="workspace">
-        <div className="max-w-6xl mx-auto">
-          {/* Section header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <span className="text-xs uppercase tracking-[0.3em] text-[var(--neon-purple)] font-medium mb-4 block">
-              Workspace
-            </span>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              <span className="gradient-text">Neural</span>{" "}
-              <span className="text-white">Analysis Lab</span>
-            </h2>
-            <p className="text-[var(--text-secondary)] max-w-xl mx-auto">
-              Interact with the brain model in real-time. Select a module and start exploring.
-            </p>
-          </motion.div>
-
-          {/* Tab Navigation */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex gap-2 p-1.5 glass-card-static">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`tab-pill flex items-center gap-2 ${activeTab === tab.id ? "active" : ""}`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab description */}
-          <motion.p
-            key={activeTab}
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center text-[var(--text-secondary)] text-sm mb-8"
-          >
-            {tabs.find((t) => t.id === activeTab)?.desc}
-          </motion.p>
-
-          {/* Content */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {activeTab === "predict" && <PredictSection />}
-              {activeTab === "compare" && <CompareSection />}
-              {activeTab === "connectivity" && <ConnectivitySection />}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </section>
-
-      {/* Footer */}
+    <main>
+      <Nav />
+      <Hero onExplore={() => workRef.current?.scrollIntoView({ behavior: "smooth" })} />
+      <Dv />
+      <Features onSelect={(id) => { setTab(id as TabId); setTimeout(() => workRef.current?.scrollIntoView({ behavior: "smooth" }), 100); }} />
+      <Dv />
+      <div ref={workRef}>
+        <Workspace tab={tab} setTab={setTab} />
+      </div>
       <Footer />
     </main>
   );
 }
 
+/* ─── NAV ─── */
+function Nav() {
+  const [s, setS] = useState(false);
+  useEffect(() => { const h = () => setS(window.scrollY > 40); window.addEventListener("scroll", h); return () => window.removeEventListener("scroll", h); }, []);
+  return (
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${s ? "bg-[#050507]/80 backdrop-blur-xl border-b border-[var(--border)]" : ""}`}>
+      <div className="max-w-[1024px] mx-auto px-6 h-14 flex items-center justify-between">
+        <a href="https://mind.new" className="flex items-center gap-2">
+          <span className="text-[15px] font-medium tracking-tight">
+            <span className="gradient-text">Neuro</span>
+            <span className="text-[var(--text)]">Brain</span>
+          </span>
+        </a>
+        <div className="hidden md:flex items-center gap-7 text-[13px] text-[var(--muted)]">
+          <a href="https://mind.new" className="hover:text-white transition">Home</a>
+          <a href="https://sensory.mind.new" className="hover:text-white transition">Sensory Audit</a>
+          <a href="https://mind.new/paper" className="hover:text-white transition">Paper</a>
+        </div>
+        <span className="text-[13px] px-4 py-1.5 rounded-full border border-white/10 text-[var(--muted)]">neuro.mind.new</span>
+      </div>
+    </nav>
+  );
+}
+
+/* ─── HERO ─── */
+function Hero({ onExplore }: { onExplore: () => void }) {
+  return (
+    <section className="relative pt-24 pb-12 px-6">
+      <div className="absolute w-[500px] h-[300px] rounded-full bg-[#7c6aff] opacity-[0.04] blur-[100px] top-16 right-1/4 pointer-events-none" />
+      <div className="relative max-w-[1024px] mx-auto">
+        <div className="flex items-center gap-2 mb-5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
+          <span className="text-[11px] text-[var(--muted)] tracking-widest uppercase">AI Brain Encoding Platform</span>
+        </div>
+        <h1 className="text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.1] tracking-[-0.03em] font-medium">
+          Predict the <span className="gradient-text">Neurodiverse Brain</span>
+        </h1>
+        <p className="text-[15px] text-[var(--muted)] mt-4 max-w-[480px] leading-relaxed font-light">
+          Visualize real-time brain activity, compare neurotypical vs neurodiverse
+          responses, and explore how autism shapes neural connectivity.
+        </p>
+        <div className="flex items-center gap-3 mt-7">
+          <button onClick={onExplore} className="text-[13px] px-5 py-2 rounded-full bg-white text-[#050507] font-medium hover:bg-white/90 transition">Start Exploring</button>
+          <a href="https://mind.new/paper" className="text-[13px] px-5 py-2 rounded-full border border-white/10 text-[var(--text)] hover:border-white/20 transition">Read the Paper</a>
+        </div>
+        <div className="flex gap-8 mt-10 pt-5 border-t border-[var(--border)]">
+          {[["177M", "parameters"], ["20,484", "vertices"], ["1,100+", "subjects"], ["820", "connections"]].map(([n, l]) => (
+            <div key={l}><div className="text-[18px] font-medium text-white tabular-nums">{n}</div><div className="text-[10px] text-[var(--muted)] mt-0.5">{l}</div></div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── FEATURES ─── */
+function Features({ onSelect }: { onSelect: (id: string) => void }) {
+  return (
+    <S>
+      <div className="max-w-[1024px] mx-auto">
+        <h2 className="reveal text-[26px] tracking-tight mb-3">Capabilities</h2>
+        <p className="reveal reveal-delay-1 text-[14px] text-[var(--muted)] mb-8 font-light max-w-md">Three modules for exploring how the neurodiverse brain processes information.</p>
+        <div className="grid md:grid-cols-3 gap-3">
+          {[
+            { id: "predict", n: "01", t: "Brain Prediction", d: "Input text and see real-time brain activation across 20,484 cortical vertices.", tag: "Real-time" },
+            { id: "compare", n: "02", t: "NT vs ND", d: "Compare neurotypical and neurodiverse brain responses across 7 brain networks.", tag: "Comparison" },
+            { id: "connectivity", n: "03", t: "ASD Connectivity", d: "Analyze brain wiring differences in autism using fMRI data from 1,100+ subjects.", tag: "Analysis" },
+          ].map((f, i) => (
+            <button key={f.id} onClick={() => onSelect(f.id)} className={`reveal reveal-delay-${i + 1} card p-5 text-left group cursor-pointer`}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] text-[var(--accent)] font-medium">{f.n}</span>
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)]">{f.tag}</span>
+              </div>
+              <h3 className="text-[14px] font-medium mb-1.5">{f.t}</h3>
+              <p className="text-[12px] text-[var(--muted)] leading-relaxed font-light">{f.d}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    </S>
+  );
+}
+
+/* ─── WORKSPACE ─── */
+function Workspace({ tab, setTab }: { tab: TabId; setTab: (t: TabId) => void }) {
+  return (
+    <S id="workspace">
+      <div className="max-w-[1024px] mx-auto">
+        <h2 className="reveal text-[26px] tracking-tight mb-3">Workspace</h2>
+        <p className="reveal reveal-delay-1 text-[14px] text-[var(--muted)] mb-8 font-light">Interact with the brain model in real-time.</p>
+
+        {/* Tabs */}
+        <div className="reveal reveal-delay-2 flex gap-1 p-1 rounded-lg bg-white/[0.03] border border-[var(--border)] inline-flex mb-8">
+          {(["predict", "compare", "connectivity"] as const).map((t) => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`text-[12px] px-4 py-2 rounded-md transition ${tab === t ? "bg-white/10 text-white" : "text-[var(--muted)] hover:text-white"}`}>
+              {t === "predict" ? "Predict" : t === "compare" ? "NT vs ND" : "Connectivity"}
+            </button>
+          ))}
+        </div>
+
+        {tab === "predict" && <PredictSection />}
+        {tab === "compare" && <CompareSection />}
+        {tab === "connectivity" && <ConnectivitySection />}
+      </div>
+    </S>
+  );
+}
+
+/* ─── PREDICT ─── */
 function PredictSection() {
   const [images, setImages] = useState<string[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [text, setText] = useState("The child watched the colorful birds flying across the bright blue sky.");
+  const [step, setStep] = useState(0);
 
-  const handlePredict = async (text: string) => {
+  const handlePredict = async () => {
     setLoading(true);
     try {
-      const form = new FormData();
-      form.append("text", text);
-      const res = await fetch(`https://neurobrain-api.eastus.cloudapp.azure.com/api/predict`, { method: "POST", body: form });
+      const form = new FormData(); form.append("text", text);
+      const res = await fetch(`${API}/predict`, { method: "POST", body: form });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      setImages(data.images || []);
-      setStats(data);
-    } catch (e: any) {
-      alert("Prediction failed: " + e.message);
-    } finally {
-      setLoading(false);
-    }
+      setImages(data.images || []); setStats(data); setStep(0);
+    } catch (e: any) { alert("Failed: " + e.message); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div className="space-y-8">
-      <TextInput onSubmit={handlePredict} loading={loading} />
+    <div className="space-y-4">
+      <div className="card p-5">
+        <label className="text-[12px] text-[var(--muted)] mb-2 block">Input Stimulus</label>
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
+          className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg p-3 text-[14px] font-light focus:outline-none focus:border-[var(--accent)]/30 resize-none" />
+        <button onClick={handlePredict} disabled={loading || !text.trim()}
+          className="mt-3 w-full py-2.5 rounded-lg bg-white text-[#050507] font-medium text-[13px] hover:bg-white/90 disabled:opacity-40 transition">
+          {loading ? "Processing..." : "Predict Brain Activity"}
+        </button>
+      </div>
+
       {stats && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="glass-card p-6"
-        >
+        <div className="card p-5">
           <div className="grid grid-cols-3 gap-4 text-center">
-            {[
-              { value: stats.timesteps, label: "Timesteps", color: "var(--accent)" },
-              { value: stats.vertices?.toLocaleString(), label: "Brain Vertices", color: "var(--neon-cyan)" },
-              { value: stats.mean_activation?.toFixed(4), label: "Mean Activation", color: "var(--neon-purple)" },
-            ].map((s) => (
-              <div key={s.label} className="p-3 bg-[var(--bg-primary)]/50 rounded-xl border border-white/5">
-                <div className="text-2xl md:text-3xl font-bold" style={{ color: s.color }}>
-                  {s.value}
-                </div>
-                <div className="text-xs text-[var(--text-secondary)] mt-1">{s.label}</div>
-              </div>
+            {[[stats.timesteps, "Timesteps"], [stats.vertices?.toLocaleString(), "Vertices"], [stats.mean_activation?.toFixed(4), "Mean Activation"]].map(([v, l]) => (
+              <div key={String(l)}><div className="text-[18px] font-medium text-white tabular-nums">{v}</div><div className="text-[10px] text-[var(--muted)] mt-0.5">{l}</div></div>
             ))}
-          </div>
-        </motion.div>
-      )}
-      {images.length > 0 && <BrainViewer images={images} />}
-      {stats && <Interpretation data={stats} context="predict" />}
-    </div>
-  );
-}
-
-function CompareSection() {
-  const [profile, setProfile] = useState<Record<string, number> | null>(null);
-  const [result, setResult] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleCompare = async (text: string) => {
-    setLoading(true);
-    try {
-      const form = new FormData();
-      form.append("text", text);
-      const res = await fetch(`https://neurobrain-api.eastus.cloudapp.azure.com/api/compare`, { method: "POST", body: form });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      setProfile(data.sensory_profile);
-      setResult(data);
-    } catch (e: any) {
-      alert("Comparison failed: " + e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-8">
-      <TextInput
-        onSubmit={handleCompare}
-        loading={loading}
-        placeholder="Enter text to compare NT vs ND brain response..."
-        buttonText="Compare Brains"
-      />
-      {result?.nt_images && result?.nd_images && (
-        <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="glass-card-static p-4 text-center"
-          >
-            <p className="text-sm text-[var(--text-secondary)]">
-              Based on <span className="text-[var(--accent)] font-semibold">{result.n_asd_subjects} ASD</span> and{" "}
-              <span className="text-[var(--neon-cyan)] font-semibold">{result.n_td_subjects} TD</span> brain scans from the ABIDE dataset
-            </p>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[var(--success)]" />
-                <h4 className="text-center font-semibold text-[var(--success)]">Neurotypical Brain</h4>
-              </div>
-              <BrainViewer images={result.nt_images} />
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[var(--warning)]" />
-                <h4 className="text-center font-semibold text-[var(--warning)]">Neurodiverse Brain (ASD)</h4>
-              </div>
-              <BrainViewer images={result.nd_images} />
-            </div>
           </div>
         </div>
       )}
-      {result && <BrainComparison result={result} />}
-      {profile && <SensoryProfile profile={profile} />}
-      {result && <Interpretation data={result} context="compare" />}
+
+      {images.length > 0 && <BrainViewer images={images} step={step} setStep={setStep} />}
     </div>
   );
 }
 
+/* ─── COMPARE ─── */
+function CompareSection() {
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [text, setText] = useState("The child watched the colorful birds flying across the bright blue sky.");
+  const [ntStep, setNtStep] = useState(0);
+  const [ndStep, setNdStep] = useState(0);
+
+  const handleCompare = async () => {
+    setLoading(true);
+    try {
+      const form = new FormData(); form.append("text", text);
+      const res = await fetch(`${API}/compare`, { method: "POST", body: form });
+      if (!res.ok) throw new Error(await res.text());
+      setResult(await res.json()); setNtStep(0); setNdStep(0);
+    } catch (e: any) { alert("Failed: " + e.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="card p-5">
+        <label className="text-[12px] text-[var(--muted)] mb-2 block">Compare NT vs ND Response</label>
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
+          className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg p-3 text-[14px] font-light focus:outline-none focus:border-[var(--accent)]/30 resize-none" />
+        <button onClick={handleCompare} disabled={loading || !text.trim()}
+          className="mt-3 w-full py-2.5 rounded-lg bg-white text-[#050507] font-medium text-[13px] hover:bg-white/90 disabled:opacity-40 transition">
+          {loading ? "Comparing..." : "Compare Brains"}
+        </button>
+      </div>
+
+      {result?.nt_images && result?.nd_images && (
+        <>
+          <div className="card p-4 text-center">
+            <p className="text-[12px] text-[var(--muted)] font-light">Based on {result.n_asd_subjects} ASD and {result.n_td_subjects} TD subjects</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="card p-4">
+              <div className="text-[12px] text-[var(--success)] font-medium mb-3 text-center">Neurotypical</div>
+              <BrainViewer images={result.nt_images} step={ntStep} setStep={setNtStep} />
+            </div>
+            <div className="card p-4">
+              <div className="text-[12px] text-[var(--warning)] font-medium mb-3 text-center">Neurodiverse (ASD)</div>
+              <BrainViewer images={result.nd_images} step={ndStep} setStep={setNdStep} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {result?.sensory_profile && (
+        <div className="card p-5">
+          <h3 className="text-[14px] font-medium mb-4">Sensory Profile</h3>
+          <div className="space-y-3">
+            {Object.entries(result.sensory_profile as Record<string, number>).sort(([,a],[,b]) => b - a).map(([k, v]) => {
+              const pct = Math.round(v * 100);
+              return (
+                <div key={k}>
+                  <div className="flex justify-between text-[12px] mb-1">
+                    <span className="capitalize font-light">{k.replace("_", " ")}</span>
+                    <span className="text-[var(--accent)] font-medium">{pct}%</span>
+                  </div>
+                  <div className="w-full h-[3px] bg-white/[0.04] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] metric-grow" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── CONNECTIVITY ─── */
 function ConnectivitySection() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -285,61 +282,84 @@ function ConnectivitySection() {
   const handleLoad = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`https://neurobrain-api.eastus.cloudapp.azure.com/api/connectivity`);
+      const res = await fetch(`${API}/connectivity`);
       if (!res.ok) throw new Error(await res.text());
       setData(await res.json());
-    } catch (e: any) {
-      alert("Failed: " + e.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: any) { alert("Failed: " + e.message); }
+    finally { setLoading(false); }
   };
 
-  return (
-    <div className="space-y-8">
-      <div className="glass-card p-8 text-center relative overflow-hidden">
-        {/* Ambient effects */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-[var(--accent)]/10 blur-[60px] rounded-full pointer-events-none" />
+  const labels: Record<string, string> = { Vis: "Visual", SomMot: "Somatomotor", DorsAttn: "Dorsal Attention", SalVentAttn: "Salience", Limbic: "Limbic", Cont: "Control", Default: "Default Mode" };
 
-        <div className="relative z-10">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--accent)] to-[var(--neon-cyan)] flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-            </svg>
+  return (
+    <div className="space-y-4">
+      <div className="card p-5 text-center">
+        <h3 className="text-[16px] font-medium mb-2">ASD vs TD Brain Connectivity</h3>
+        <p className="text-[13px] text-[var(--muted)] font-light mb-5">Compare how brain regions communicate differently in autism.</p>
+        <button onClick={handleLoad} disabled={loading}
+          className="text-[13px] px-6 py-2.5 rounded-full bg-white text-[#050507] font-medium hover:bg-white/90 disabled:opacity-40 transition">
+          {loading ? "Analyzing..." : "Run Analysis"}
+        </button>
+      </div>
+
+      {data && (
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-[14px] font-medium">Network Differences</h3>
+            <div className="flex gap-3 text-[11px] text-[var(--muted)]">
+              <span>ASD: {data.asd_subjects}</span>
+              <span>TD: {data.td_subjects}</span>
+            </div>
           </div>
-          <h3 className="text-2xl font-bold mb-3">
-            ASD vs TD Brain Connectivity
-          </h3>
-          <p className="text-[var(--text-secondary)] mb-8 max-w-lg mx-auto">
-            Compare how brain regions communicate differently in autism using
-            real fMRI data from the ABIDE dataset with 1,100+ subjects.
-          </p>
-          <button
-            onClick={handleLoad}
-            disabled={loading}
-            className="btn-futuristic px-10 py-4 text-base disabled:opacity-50 mx-auto"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Analyzing brain scans...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Run Analysis
-              </span>
-            )}
-          </button>
+          <div className="space-y-3">
+            {Object.entries(data.network_differences as Record<string, number>).map(([net, val]) => {
+              const max = Math.max(...Object.values(data.network_differences as Record<string, number>));
+              const pct = (val / max) * 100;
+              return (
+                <div key={net} className="flex items-center gap-4">
+                  <div className="w-32 text-[12px] text-right text-[var(--muted)] font-light flex-shrink-0">{labels[net] || net}</div>
+                  <div className="flex-1 h-6 bg-white/[0.03] rounded overflow-hidden relative">
+                    <div className="h-full rounded bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] metric-grow" style={{ width: `${pct}%` }} />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-white/60">{val.toFixed(4)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── BRAIN VIEWER ─── */
+function BrainViewer({ images, step, setStep }: { images: string[]; step: number; setStep: (n: number) => void }) {
+  return (
+    <div className="card p-4">
+      <div className="bg-black rounded-lg overflow-hidden">
+        <img src={`data:image/png;base64,${images[step]}`} alt="Brain" className="w-full" />
+      </div>
+      <div className="mt-3">
+        <input type="range" min={0} max={images.length - 1} value={step} onChange={(e) => setStep(Number(e.target.value))}
+          className="w-full accent-[var(--accent)] h-1" />
+        <div className="flex justify-between text-[10px] text-[var(--muted)] mt-1">
+          <span>t=0s</span>
+          <span className="text-[var(--accent)] font-medium">t={step}s</span>
+          <span>t={images.length - 1}s</span>
         </div>
       </div>
-      {data && <ConnectivityChart data={data} />}
-      {data && <Interpretation data={data} context="connectivity" />}
     </div>
+  );
+}
+
+/* ─── FOOTER ─── */
+function Footer() {
+  return (
+    <footer className="border-t border-[var(--border)] py-5 px-6">
+      <div className="max-w-[1024px] mx-auto flex items-center justify-between text-[11px] text-[var(--muted)]">
+        <span>NeuroBrain by Leeza Care</span>
+        <a href="https://mind.new" className="hover:text-white transition">mind.new</a>
+      </div>
+    </footer>
   );
 }
