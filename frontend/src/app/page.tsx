@@ -89,9 +89,9 @@ function Hero({ onExplore }: { onExplore: () => void }) {
           <button onClick={onExplore} className="text-[13px] px-5 py-2 rounded-full bg-white text-[#050507] font-medium hover:bg-white/90 transition">Start Exploring</button>
           <a href="https://mind.new/paper" className="text-[13px] px-5 py-2 rounded-full border border-white/10 text-[var(--text)] hover:border-white/20 transition">Read the Paper</a>
         </div>
-        <div className="flex gap-8 mt-10 pt-5 border-t border-[var(--border)]">
+        <div className="grid grid-cols-2 sm:flex sm:gap-8 gap-4 mt-10 pt-5 border-t border-[var(--border)]">
           {[["177M", "parameters"], ["20,484", "vertices"], ["1,100+", "subjects"], ["820", "connections"]].map(([n, l]) => (
-            <div key={l}><div className="text-[18px] font-medium text-white tabular-nums">{n}</div><div className="text-[10px] text-[var(--muted)] mt-0.5">{l}</div></div>
+            <div key={l}><div className="text-[16px] sm:text-[18px] font-medium text-white tabular-nums">{n}</div><div className="text-[10px] text-[var(--muted)] mt-0.5">{l}</div></div>
           ))}
         </div>
       </div>
