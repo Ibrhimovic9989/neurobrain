@@ -286,21 +286,32 @@ _nd_transform = None
 
 
 def get_nd_transform():
-    """Load the neurodiverse transform trained on ABIDE data."""
+    """Load the neurodiverse transform trained on ABIDE data.
+    Tries v4 (FDR-corrected) first, falls back to v3."""
     global _nd_transform
     if _nd_transform is None:
         import torch
         from huggingface_hub import hf_hub_download
-        path = hf_hub_download("Ibrahim9989/neurobrain-nd-transform", "neurodiverse_transform_v3.pt")
-        _nd_transform = torch.load(path, map_location="cpu", weights_only=True)
-        logger.info("Neurodiverse transform loaded (%d ASD, %d TD subjects)",
-                     _nd_transform["n_asd"], _nd_transform["n_td"])
+        try:
+            path = hf_hub_download("Ibrahim9989/neurobrain-nd-transform", "neurodiverse_transform_v4.pt")
+            _nd_transform = torch.load(path, map_location="cpu", weights_only=False)
+            logger.info("Neurodiverse transform v4 loaded (FDR-corrected, %d ASD, %d TD subjects)",
+                         _nd_transform["n_asd"], _nd_transform["n_td"])
+            if "sig_fdr" in _nd_transform:
+                logger.info("  FDR-significant: %d, Uncorrected: %d, Bonferroni: %d",
+                             _nd_transform["sig_fdr"], _nd_transform["sig_uncorrected"], _nd_transform["sig_bonferroni"])
+        except Exception:
+            path = hf_hub_download("Ibrahim9989/neurobrain-nd-transform", "neurodiverse_transform_v3.pt")
+            _nd_transform = torch.load(path, map_location="cpu", weights_only=True)
+            logger.info("Neurodiverse transform v3 loaded (uncorrected, %d ASD, %d TD subjects)",
+                         _nd_transform["n_asd"], _nd_transform["n_td"])
     return _nd_transform
 
 
 @app.post("/api/compare")
-async def compare_models(text: str = Form(...)):
-    """Compare neurotypical vs neurodiverse brain predictions."""
+async def compare_models(text: str = Form(...), age_band: str = Form(None)):
+    """Compare neurotypical vs neurodiverse brain predictions.
+    Optional age_band: 'child' (0-12), 'adolescent' (12-18), 'adult' (18+), or None for all-ages."""
     try:
         model = get_model()
         transform = get_nd_transform()
@@ -314,13 +325,35 @@ async def compare_models(text: str = Form(...)):
         events = model.get_events_dataframe(text_path=text_path)
         nt_preds, segments = model.predict(events, verbose=False)
 
-        # Apply ABIDE-derived transform: NT -> ND
-        scale = transform["vertex_scale"].numpy()
-        shift = transform["vertex_shift"].numpy()
+        # Select age-appropriate transform if available
+        if age_band and "age_transforms" in transform and age_band in transform["age_transforms"]:
+            age_t = transform["age_transforms"][age_band]
+            scale = age_t["vertex_scale"].numpy()
+            shift = age_t.get("vertex_shift", transform["vertex_shift"]).numpy()
+            age_info = {"age_band": age_band, "n_asd": int(age_t["n_asd"]), "n_td": int(age_t["n_td"]),
+                        "sig_connections_fdr": int(age_t.get("sig_connections_fdr", 0))}
+        else:
+            scale = transform["vertex_scale"].numpy()
+            shift = transform["vertex_shift"].numpy()
+            age_info = {"age_band": "all", "n_asd": int(transform["n_asd"]), "n_td": int(transform["n_td"])}
+
+        # Apply transform: NT -> ND
         nd_preds = nt_preds * scale + shift
 
         # Compute divergence
         divergence = np.mean((nt_preds - nd_preds) ** 2, axis=0)
+
+        # Compute uncertainty if available (v4)
+        uncertainty = {}
+        if "vertex_ci_lower" in transform and "vertex_ci_upper" in transform:
+            ci_lower = transform["vertex_ci_lower"].numpy()
+            ci_upper = transform["vertex_ci_upper"].numpy()
+            ci_width = ci_upper - ci_lower
+            uncertainty = {
+                "mean_ci_width": float(ci_width.mean()),
+                "max_ci_width": float(ci_width.max()),
+                "high_confidence_vertices_pct": float((ci_width < ci_width.mean()).sum() / len(ci_width) * 100),
+            }
 
         # Network-level divergence profile
         roi_effect = transform["roi_effect"].numpy()
@@ -345,6 +378,13 @@ async def compare_models(text: str = Form(...)):
         nt_images = [brain_to_image(nt_preds, t) for t in range(n_steps)]
         nd_images = [brain_to_image(nd_preds, t) for t in range(n_steps)]
 
+        # Transform version info
+        version_info = {"version": transform.get("version", "v3")}
+        if "sig_fdr" in transform:
+            version_info["sig_fdr"] = int(transform["sig_fdr"])
+            version_info["sig_uncorrected"] = int(transform["sig_uncorrected"])
+            version_info["corrections"] = transform.get("corrections", [])
+
         return {
             "status": "real",
             "stimulus_text": text,
@@ -353,11 +393,15 @@ async def compare_models(text: str = Form(...)):
                 "mean": float(divergence.mean()),
                 "max": float(divergence.max()),
             },
+            "uncertainty": uncertainty,
+            "age_info": age_info,
+            "transform_version": version_info,
             "nt_images": nt_images,
             "nd_images": nd_images,
             "timesteps": n_steps,
-            "n_asd_subjects": int(transform["n_asd"]),
-            "n_td_subjects": int(transform["n_td"]),
+            "n_asd_subjects": age_info["n_asd"],
+            "n_td_subjects": age_info["n_td"],
+            "disclaimer": "AQAL is a research tool for accessibility design, not a diagnostic medical device. Predictions are population-level estimates with inherent uncertainty. Do not use for clinical diagnosis.",
         }
     except Exception as e:
         logger.error(f"Comparison failed: {e}", exc_info=True)
