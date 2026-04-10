@@ -230,6 +230,7 @@ function CompareSection() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [text, setText] = useState("The child watched the colorful birds flying across the bright blue sky.");
+  const [ageBand, setAgeBand] = useState<string>("");
   const [ntStep, setNtStep] = useState(0);
   const [ndStep, setNdStep] = useState(0);
 
@@ -237,6 +238,7 @@ function CompareSection() {
     setLoading(true);
     try {
       const form = new FormData(); form.append("text", text);
+      if (ageBand) form.append("age_band", ageBand);
       const res = await fetch(`${API}/compare`, { method: "POST", body: form });
       if (!res.ok) throw new Error(await res.text());
       setResult(await res.json()); setNtStep(0); setNdStep(0);
@@ -250,6 +252,18 @@ function CompareSection() {
         <label className="text-[12px] text-[var(--muted)] mb-2 block">Compare NT vs ND Response</label>
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
           className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg p-3 text-[14px] font-light focus:outline-none focus:border-[var(--accent)]/30 resize-none" />
+        {/* Age band selector */}
+        <div className="flex items-center gap-3 mt-3">
+          <label className="text-[11px] text-[var(--muted)]">Age band:</label>
+          <div className="flex gap-1 p-0.5 rounded-lg bg-white/[0.03] border border-[var(--border)]">
+            {[{ v: "", l: "All ages" }, { v: "child", l: "Child (0-12)" }, { v: "adolescent", l: "Adolescent (12-18)" }, { v: "adult", l: "Adult (18+)" }].map((o) => (
+              <button key={o.v} onClick={() => setAgeBand(o.v)}
+                className={`text-[10px] px-2.5 py-1 rounded-md transition ${ageBand === o.v ? "bg-white/10 text-white" : "text-[var(--muted)] hover:text-white"}`}>
+                {o.l}
+              </button>
+            ))}
+          </div>
+        </div>
         <button onClick={handleCompare} disabled={loading || !text.trim()}
           className="mt-3 w-full py-2.5 rounded-lg bg-white text-[#050507] font-medium text-[13px] hover:bg-white/90 disabled:opacity-40 transition">
           {loading ? "Comparing..." : "Compare Brains"}
@@ -293,6 +307,30 @@ function CompareSection() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Metadata & Disclaimer */}
+      {result && (
+        <div className="bg-[var(--bg)] rounded-lg p-4 border border-[var(--border)] space-y-2">
+          {result.age_info && (
+            <p className="text-[11px] text-[var(--muted)] font-light">
+              Age band: <span className="text-white font-normal">{result.age_info.age_band}</span> &middot;
+              {" "}{result.age_info.n_asd} ASD + {result.age_info.n_td} TD subjects
+              {result.transform_version?.sig_fdr != null && (
+                <> &middot; {result.transform_version.sig_fdr} FDR-significant connections</>
+              )}
+            </p>
+          )}
+          {result.uncertainty?.mean_ci_width != null && (
+            <p className="text-[11px] text-[var(--muted)] font-light">
+              Uncertainty: mean CI width {result.uncertainty.mean_ci_width.toFixed(4)} &middot;
+              {" "}{result.uncertainty.high_confidence_vertices_pct.toFixed(0)}% high-confidence vertices
+            </p>
+          )}
+          {result.disclaimer && (
+            <p className="text-[10px] text-[var(--muted)]/60 font-light italic">{result.disclaimer}</p>
+          )}
         </div>
       )}
     </div>
