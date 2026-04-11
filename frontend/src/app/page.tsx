@@ -51,6 +51,7 @@ function Nav() {
   useEffect(() => { const h = () => setS(window.scrollY > 40); window.addEventListener("scroll", h); return () => window.removeEventListener("scroll", h); }, []);
   const links = [
     { href: "https://mind.new", label: "Home" },
+    { href: "/calibrate", label: "Calibrate" },
     { href: "https://sensory.mind.new", label: "Sensory Audit" },
     { href: "https://mind.new/paper", label: "Paper" },
   ];
@@ -290,22 +291,42 @@ function CompareSection() {
 
       {result?.sensory_profile && (
         <div className="card p-5">
-          <h3 className="text-[14px] font-medium mb-4">Sensory Profile</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[14px] font-medium">Sensory Profile</h3>
+            {result.uncertainty?.mean_ci_width != null && (
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)]">
+                ±{(result.uncertainty.mean_ci_width * 100).toFixed(1)}% avg CI
+              </span>
+            )}
+          </div>
           <div className="space-y-3">
             {Object.entries(result.sensory_profile as Record<string, number>).sort(([,a],[,b]) => b - a).map(([k, v]) => {
               const pct = Math.round(v * 100);
+              const ciHalf = result.uncertainty?.mean_ci_width ? Math.round(result.uncertainty.mean_ci_width * 100 / 2) : 0;
+              const lo = Math.max(0, pct - ciHalf);
+              const hi = Math.min(100, pct + ciHalf);
               return (
                 <div key={k}>
                   <div className="flex justify-between text-[12px] mb-1">
                     <span className="capitalize font-light">{k.replace("_", " ")}</span>
-                    <span className="text-[var(--accent)] font-medium">{pct}%</span>
+                    <span className="text-[var(--accent)] font-medium tabular-nums">
+                      {pct}%{ciHalf > 0 && <span className="text-[var(--muted)] font-light text-[10px]"> ({lo}–{hi})</span>}
+                    </span>
                   </div>
-                  <div className="w-full h-[3px] bg-white/[0.04] rounded-full overflow-hidden">
+                  <div className="w-full h-[3px] bg-white/[0.04] rounded-full overflow-hidden relative">
                     <div className="h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] metric-grow" style={{ width: `${pct}%` }} />
+                    {ciHalf > 0 && (
+                      <div className="absolute top-0 h-full rounded-full bg-[var(--accent)]/10" style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
+                    )}
                   </div>
                 </div>
               );
             })}
+          </div>
+          <div className="mt-4 pt-3 border-t border-[var(--border)]">
+            <a href="/calibrate" className="text-[11px] text-[var(--accent)] hover:text-white transition font-medium">
+              Personalize with 5-min calibration →
+            </a>
           </div>
         </div>
       )}
