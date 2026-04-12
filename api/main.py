@@ -293,9 +293,9 @@ def get_nd_transform():
         import torch
         from huggingface_hub import hf_hub_download
         try:
-            path = hf_hub_download("Ibrahim9989/neurobrain-nd-transform", "neurodiverse_transform_v4.pt")
+            path = hf_hub_download("Ibrahim9989/neurobrain-nd-transform", "neurodiverse_transform_v5.pt")
             _nd_transform = torch.load(path, map_location="cpu", weights_only=False)
-            logger.info("Neurodiverse transform v4 loaded (FDR-corrected, %d ASD, %d TD subjects)",
+            logger.info("Neurodiverse transform v5 loaded (ABIDE I+II, %d ASD, %d TD subjects)",
                          _nd_transform["n_asd"], _nd_transform["n_td"])
             if "sig_fdr" in _nd_transform:
                 logger.info("  FDR-significant: %d, Uncorrected: %d, Bonferroni: %d",
