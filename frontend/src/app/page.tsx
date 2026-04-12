@@ -116,7 +116,7 @@ function Hero({ onExplore }: { onExplore: () => void }) {
           <a href="https://mind.new/paper" className="text-[13px] px-5 py-2 rounded-full border border-white/10 text-[var(--text)] hover:border-white/20 transition">Read the Paper</a>
         </div>
         <div className="grid grid-cols-2 sm:flex sm:gap-8 gap-4 mt-10 pt-5 border-t border-[var(--border)]">
-          {[["177M", "parameters"], ["20,484", "vertices"], ["1,100+", "subjects"], ["820", "connections"]].map(([n, l]) => (
+          {[["177M", "parameters"], ["20,484", "vertices"], ["1,545", "subjects"], ["1,002", "connections"]].map(([n, l]) => (
             <div key={l}><div className="text-[16px] sm:text-[18px] font-medium text-white tabular-nums">{n}</div><div className="text-[10px] text-[var(--muted)] mt-0.5">{l}</div></div>
           ))}
         </div>
@@ -136,7 +136,7 @@ function Features({ onSelect }: { onSelect: (id: string) => void }) {
           {[
             { id: "predict", n: "01", t: "Brain Prediction", d: "Input text and see real-time brain activation across 20,484 cortical vertices.", tag: "Real-time" },
             { id: "compare", n: "02", t: "NT vs ND", d: "Compare neurotypical and neurodiverse brain responses across 7 brain networks.", tag: "Comparison" },
-            { id: "connectivity", n: "03", t: "ASD Connectivity", d: "Analyze brain wiring differences in autism using fMRI data from 1,100+ subjects.", tag: "Analysis" },
+            { id: "connectivity", n: "03", t: "ASD Connectivity", d: "Analyze brain wiring differences in autism using fMRI data from 1,545 subjects across 36 sites.", tag: "Analysis" },
           ].map((f, i) => (
             <button key={f.id} onClick={() => onSelect(f.id)} className={`reveal reveal-delay-${i + 1} card p-5 text-left group cursor-pointer`}>
               <div className="flex items-center justify-between mb-3">
