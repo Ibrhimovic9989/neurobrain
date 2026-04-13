@@ -180,7 +180,7 @@ export default function BrainComparison({ result }: BrainComparisonProps) {
 
         <div className="mt-4 p-3 bg-[var(--bg-primary)]/60 rounded-xl border border-white/5">
           <p className="text-xs text-[var(--text-secondary)]">
-            Data source: ABIDE dataset ({result.n_asd_subjects} ASD + {result.n_td_subjects} TD subjects).
+            Data source: {result.n_asd_subjects} ASD + {result.n_td_subjects} TD subjects across multiple clinical sites.
             Transform derived from statistically significant connectivity differences (p &lt; 0.05).
           </p>
         </div>

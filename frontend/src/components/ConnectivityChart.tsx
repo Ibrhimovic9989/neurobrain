@@ -100,7 +100,7 @@ export default function ConnectivityChart({ data }: ConnectivityChartProps) {
             <strong className="text-white">Reading this chart: </strong>
             Longer bars mean bigger differences in how brain networks
             communicate between autistic and non-autistic individuals. Data from
-            the ABIDE dataset ({data.asd_subjects + data.td_subjects} real fMRI brain scans).
+            {data.asd_subjects + data.td_subjects} real fMRI brain scans across multiple clinical sites.
           </p>
         </div>
       </div>
