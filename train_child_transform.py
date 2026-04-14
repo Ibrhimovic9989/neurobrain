@@ -45,30 +45,43 @@ pheno_i['source'] = 'ABIDE_I'
 children_i = pheno_i[pheno_i['age'] < AGE_MAX].copy()
 logger.info(f"ABIDE I children (<{AGE_MAX}): {len(children_i)} ({(children_i.diagnosis=='ASD').sum()} ASD, {(children_i.diagnosis=='TD').sum()} TD)")
 
-# ── Step 2: Load ABIDE II ──
-logger.info("Loading ABIDE II...")
+# ── Step 2: Load ABIDE II from raw BIDS downloads ──
+logger.info("Loading ABIDE II children from raw BIDS...")
+import json, glob
+
+children_ii = pd.DataFrame()
 try:
-    dataset_ii = fetch_abide_pcp(
-        data_dir=str(Path.home() / "data/abide2_full"),
-        pipeline='cpac',
-        band_pass_filtering=True,
-        global_signal_regression=False,
-        derivatives=['func_preproc'],
-        n_subjects=None,
-    )
+    abide2_dir = Path.home() / "data/abide2_children"
+    pheno_path = Path("/tmp/abide2_children_download.json")
 
-    pheno_ii = pd.DataFrame(dataset_ii.phenotypic)
-    pheno_ii['func_path'] = [str(p) for p in dataset_ii.func_preproc]
-    pheno_ii['diagnosis'] = pheno_ii['DX_GROUP'].map({1: 'ASD', 2: 'TD'})
-    pheno_ii['age'] = pd.to_numeric(pheno_ii['AGE_AT_SCAN'], errors='coerce')
-    pheno_ii['sex'] = pd.to_numeric(pheno_ii['SEX'], errors='coerce')
-    pheno_ii['site'] = pheno_ii['SITE_ID'].astype(str) + '_II'
-    pheno_ii['source'] = 'ABIDE_II'
+    if pheno_path.exists() and abide2_dir.exists():
+        with open(pheno_path) as f:
+            abide2_meta = json.load(f)
 
-    children_ii = pheno_ii[pheno_ii['age'] < AGE_MAX].copy()
-    logger.info(f"ABIDE II children (<{AGE_MAX}): {len(children_ii)} ({(children_ii.diagnosis=='ASD').sum()} ASD, {(children_ii.diagnosis=='TD').sum()} TD)")
+        rows = []
+        for child in abide2_meta:
+            sub_dir = abide2_dir / f"sub-{child['sub_id']}"
+            bold_files = sorted(glob.glob(str(sub_dir / "*rest*bold.nii.gz")))
+            if bold_files:
+                rows.append({
+                    'func_path': bold_files[0],
+                    'diagnosis': 'ASD' if child['dx'] == 1 else 'TD',
+                    'age': child['age'],
+                    'sex': 1,  # Default, not available in raw BIDS phenotypic
+                    'site': child['site'] + '_II',
+                    'source': 'ABIDE_II',
+                })
+
+        if rows:
+            children_ii = pd.DataFrame(rows)
+            children_ii = children_ii[children_ii['age'] < AGE_MAX].copy()
+            logger.info(f"ABIDE II children (<{AGE_MAX}): {len(children_ii)} ({(children_ii.diagnosis=='ASD').sum()} ASD, {(children_ii.diagnosis=='TD').sum()} TD)")
+        else:
+            logger.warning("No ABIDE II fMRI files found.")
+    else:
+        logger.warning("ABIDE II data not found. Using ABIDE I only.")
 except Exception as e:
-    logger.warning(f"ABIDE II not available: {e}. Using ABIDE I only.")
+    logger.warning(f"ABIDE II loading failed: {e}. Using ABIDE I only.")
     children_ii = pd.DataFrame()
 
 # ── Step 3: Combine ──

@@ -44,6 +44,32 @@ export default function Home() {
   );
 }
 
+/* ─── THEME TOGGLE ─── */
+function ThemeToggle() {
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  useEffect(() => {
+    const saved = (typeof window !== "undefined" && localStorage.getItem("theme")) as "dark" | "light" | null;
+    const initial = saved || "dark";
+    setTheme(initial);
+    document.documentElement.setAttribute("data-theme", initial);
+  }, []);
+  const toggle = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+  };
+  return (
+    <button onClick={toggle} aria-label="Toggle theme" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition text-[var(--muted)] hover:text-[var(--text)]">
+      {theme === "dark" ? (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+      ) : (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+      )}
+    </button>
+  );
+}
+
 /* ─── NAV ─── */
 function Nav() {
   const [s, setS] = useState(false);
@@ -67,7 +93,8 @@ function Nav() {
         <div className="hidden md:flex items-center gap-7 text-[13px] text-[var(--muted)]">
           {links.map((l) => <a key={l.href} href={l.href} className="hover:text-white transition">{l.label}</a>)}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           <span className="hidden sm:inline text-[13px] px-4 py-1.5 rounded-full border border-white/10 text-[var(--muted)]">neuro.mind.new</span>
           <button onClick={() => setOpen(!open)} className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/5 transition" aria-label="Menu">
             {open ? (
@@ -439,12 +466,45 @@ function BrainViewer({ images, step, setStep }: { images: string[]; step: number
 /* ─── FOOTER ─── */
 function Footer() {
   return (
-    <footer className="border-t border-[var(--border)] py-5 px-6">
-      <div className="max-w-[1024px] mx-auto">
-        <p className="text-[10px] text-[var(--muted)]/50 mb-4 leading-relaxed font-light">AQAL is a research tool for accessibility design. It is not a diagnostic medical device. Predictions are population-level estimates, not individual assessments. If concerned about a child, consult a developmental pediatrician.</p>
-        <div className="flex items-center justify-between text-[11px] text-[var(--muted)]">
-          <span>NeuroBrain by Leeza Care</span>
-          <a href="https://mind.new" className="hover:text-white transition">mind.new</a>
+    <footer className="border-t border-[var(--border)] mt-20">
+      <div className="max-w-[1024px] mx-auto px-6 py-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+          <div>
+            <span className="text-[15px] font-medium tracking-tight">
+              <span className="gradient-text">Neuro</span><span className="text-[var(--text)]">Brain</span>
+            </span>
+            <p className="text-[11px] text-[var(--muted)] leading-relaxed font-light mt-2">AI brain encoding platform. Built by Leeza Care.</p>
+          </div>
+          <div>
+            <h4 className="text-[10px] text-[var(--muted)] tracking-widest uppercase mb-3 font-medium">Tools</h4>
+            <div className="flex flex-col gap-1.5">
+              <a href="/calibrate" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Calibrate</a>
+              <a href="/passport" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Sensory Passport</a>
+              <a href="https://sensory.mind.new" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Sensory Audit</a>
+            </div>
+          </div>
+          <div>
+            <h4 className="text-[10px] text-[var(--muted)] tracking-widest uppercase mb-3 font-medium">Research</h4>
+            <div className="flex flex-col gap-1.5">
+              <a href="https://mind.new/paper" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Paper</a>
+              <a href="https://mind.new/roadmap" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Roadmap</a>
+              <a href="https://mind.new/explorer" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Explorer</a>
+              <a href="https://mind.new/faq" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">FAQ</a>
+            </div>
+          </div>
+          <div>
+            <h4 className="text-[10px] text-[var(--muted)] tracking-widest uppercase mb-3 font-medium">About</h4>
+            <div className="flex flex-col gap-1.5">
+              <a href="https://mind.new/team" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Team</a>
+              <a href="https://mind.new/waitlist" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Waitlist</a>
+              <a href="https://mind.new/privacy" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Privacy</a>
+              <a href="mailto:ibrahim.raza@leeza.app" className="text-[12px] text-[var(--text)] hover:text-[var(--accent)] transition font-light">Contact</a>
+            </div>
+          </div>
+        </div>
+        <div className="pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p className="text-[10px] text-[var(--muted)]/60 leading-relaxed font-light max-w-md">AQAL is a research tool, not a diagnostic medical device. Predictions are population-level estimates.</p>
+          <p className="text-[10px] text-[var(--muted)]">© 2026 Leeza Care R&amp;D Foundation</p>
         </div>
       </div>
     </footer>

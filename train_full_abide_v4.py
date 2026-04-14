@@ -70,10 +70,17 @@ n_total = len(pheno)
 for i, (_, row) in enumerate(pheno.iterrows()):
     try:
         ts = masker.fit_transform(row['func_path'])
+        if ts.shape[0] < 20:  # Skip very short scans
+            continue
         conn = np.corrcoef(ts.T)
+        # Handle NaN from constant timeseries (stddev=0)
+        conn = np.nan_to_num(conn, nan=0.0)
         conn = np.arctanh(np.clip(conn, -0.999, 0.999))
+        conn = np.nan_to_num(conn, nan=0.0)
         np.fill_diagonal(conn, 0)
         upper = conn[np.triu_indices(100, k=1)]
+        if np.any(np.isnan(upper)) or np.any(np.isinf(upper)):
+            continue  # Skip subjects with bad connectivity
         features.append(upper)
         meta.append({
             'diagnosis': 1 if row['diagnosis'] == 'ASD' else 0,
@@ -94,14 +101,13 @@ logger.info(f"Extracted: {len(X)} subjects ({sum(y)} ASD, {len(y)-sum(y)} TD)")
 
 # ── Step 3: Site harmonization (residualize site effects) ──
 logger.info("Harmonizing site effects...")
+from numpy.linalg import lstsq as np_lstsq
 site_dummies = pd.get_dummies(meta_df['site'], drop_first=True).values.astype(float)
+A_site = np.column_stack([np.ones(len(X)), site_dummies])
 X_harmonized = np.zeros_like(X)
 for feat_i in range(X.shape[1]):
-    # Regress out site effect from each connectivity feature
-    from numpy.linalg import lstsq
-    A = np.column_stack([np.ones(len(X)), site_dummies])
-    coeffs, _, _, _ = lstsq(A, X[:, feat_i], rcond=None)
-    residual = X[:, feat_i] - A @ coeffs
+    coeffs, _, _, _ = np_lstsq(A_site, X[:, feat_i], rcond=None)
+    residual = X[:, feat_i] - A_site @ coeffs
     # Add back global mean
     X_harmonized[:, feat_i] = residual + X[:, feat_i].mean()
 logger.info("Site harmonization complete.")
