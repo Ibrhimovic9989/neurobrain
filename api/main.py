@@ -292,6 +292,16 @@ def get_nd_transform():
     if _nd_transform is None:
         import torch
         from huggingface_hub import hf_hub_download
+        # Try v6 learned first, fall back to v5 statistical, then v4, then v3
+        for fname in ["neurodiverse_transform_v6.pt", "neurodiverse_transform_v5.pt", "neurodiverse_transform_v4.pt"]:
+            try:
+                path = hf_hub_download("Ibrahim9989/neurobrain-nd-transform", fname)
+                _nd_transform = torch.load(path, map_location="cpu", weights_only=False)
+                logger.info("Neurodiverse transform %s loaded (%d ASD, %d TD subjects)",
+                             _nd_transform.get("version", fname), _nd_transform["n_asd"], _nd_transform["n_td"])
+                return _nd_transform
+            except Exception as e:
+                logger.info(f"  Skip {fname}: {e}")
         try:
             path = hf_hub_download("Ibrahim9989/neurobrain-nd-transform", "neurodiverse_transform_v5.pt")
             _nd_transform = torch.load(path, map_location="cpu", weights_only=False)
