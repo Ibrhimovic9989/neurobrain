@@ -28,6 +28,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Cortex v1 — separate model family for brain pattern recognition
+try:
+    from api.cortex_routes import router as cortex_router
+    app.include_router(cortex_router)
+    logger.info("Cortex routes mounted at /api/cortex/*")
+except Exception as _e:
+    logger.warning(f"Cortex routes not mounted: {_e}")
+
+# Calibration — per-person OLS behavioral calibration
+try:
+    from api.calibration import router as calibration_router, apply_profile_to_network
+    app.include_router(calibration_router)
+    logger.info("Calibration routes mounted at /api/calibrate/*")
+except Exception as _e:
+    logger.warning(f"Calibration routes not mounted: {_e}")
+    apply_profile_to_network = None
+
+# Guardrails — disclaimer text attached to prediction responses
+try:
+    from api.guardrails import attach_to_response as _attach_disclaimer
+    logger.info("Guardrails module loaded")
+except Exception as _e:
+    logger.warning(f"Guardrails not loaded: {_e}")
+    def _attach_disclaimer(resp, keys=None): return resp
+
 # Global model instances (loaded once at startup)
 _model = None
 _analyzer = None
@@ -319,9 +344,20 @@ def get_nd_transform():
 
 
 @app.post("/api/compare")
-async def compare_models(text: str = Form(...), age_band: str = Form(None)):
+async def compare_models(
+    text: str = Form(...),
+    age_band: str = Form(None),
+    calibration_profile: str = Form(None),
+):
     """Compare neurotypical vs neurodiverse brain predictions.
-    Optional age_band: 'child' (0-12), 'adolescent' (12-18), 'adult' (18+), or None for all-ages."""
+
+    Optional params:
+      age_band: 'child' (0-12), 'adolescent' (12-18), 'adult' (18+), or None for all-ages.
+      calibration_profile: JSON-encoded calibration profile from /api/calibrate/fit.
+        When provided, the 7-network sensory profile is modulated by per-person
+        sensitivity factors, turning the group-average prediction into a
+        first-order individualized one.
+    """
     try:
         model = get_model()
         transform = get_nd_transform()
@@ -383,6 +419,24 @@ async def compare_models(text: str = Form(...), age_band: str = Form(None)):
         max_p = max(profile.values()) or 1.0
         profile = {k: v / max_p for k, v in profile.items()}
 
+        # Apply per-person calibration if provided
+        calibration_info = None
+        if calibration_profile and apply_profile_to_network:
+            try:
+                import json as _json
+                cal = _json.loads(calibration_profile)
+                net_mod = cal.get("network_modulation") or cal.get("profile", {}).get("network_modulation")
+                if net_mod:
+                    profile = apply_profile_to_network(net_mod, profile)
+                    calibration_info = {
+                        "applied": True,
+                        "axis_sensitivity": cal.get("axis_sensitivity"),
+                        "n_stimuli_rated": cal.get("n_stimuli_rated"),
+                    }
+            except Exception as _ce:
+                logger.warning(f"Calibration profile invalid, ignoring: {_ce}")
+                calibration_info = {"applied": False, "error": str(_ce)}
+
         # Generate brain images for both
         n_steps = min(nt_preds.shape[0], 8)
         nt_images = [brain_to_image(nt_preds, t) for t in range(n_steps)]
@@ -395,7 +449,7 @@ async def compare_models(text: str = Form(...), age_band: str = Form(None)):
             version_info["sig_uncorrected"] = int(transform["sig_uncorrected"])
             version_info["corrections"] = transform.get("corrections", [])
 
-        return {
+        response = {
             "status": "real",
             "stimulus_text": text,
             "sensory_profile": profile,
@@ -406,13 +460,20 @@ async def compare_models(text: str = Form(...), age_band: str = Form(None)):
             "uncertainty": uncertainty,
             "age_info": age_info,
             "transform_version": version_info,
+            "calibration": calibration_info,
             "nt_images": nt_images,
             "nd_images": nd_images,
             "timesteps": n_steps,
             "n_asd_subjects": age_info["n_asd"],
             "n_td_subjects": age_info["n_td"],
-            "disclaimer": "AQAL is a research tool for accessibility design, not a diagnostic medical device. Predictions are population-level estimates with inherent uncertainty. Do not use for clinical diagnosis.",
         }
+        # Attach structured disclaimers — escalated keys if no calibration provided
+        disclaimer_keys = ["not_diagnostic", "cohort_limitations", "escalation"]
+        if calibration_info and calibration_info.get("applied"):
+            disclaimer_keys = ["not_diagnostic", "cohort_limitations"]
+        else:
+            disclaimer_keys.append("population_average")
+        return _attach_disclaimer(response, disclaimer_keys)
     except Exception as e:
         logger.error(f"Comparison failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
