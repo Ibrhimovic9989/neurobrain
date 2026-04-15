@@ -409,15 +409,37 @@ async def compare_models(
             "SalVentAttn": "salience", "Limbic": "emotional",
             "Cont": "control", "Default": "default_mode",
         }
-        profile = {}
+        network_effects: dict = {}
         for label, effect in zip(roi_labels, roi_effect):
             for short, full in network_map.items():
                 if short in label:
-                    profile.setdefault(full, []).append(float(effect))
+                    network_effects.setdefault(full, []).append(float(effect))
                     break
-        profile = {k: float(np.mean(v)) for k, v in profile.items()}
+        profile = {k: float(np.mean(v)) for k, v in network_effects.items()}
         max_p = max(profile.values()) or 1.0
         profile = {k: v / max_p for k, v in profile.items()}
+
+        # Per-network confidence intervals — within-network std of ROI effects,
+        # normalized against the same max_p as the mean profile so error bars
+        # render on the same 0-1 scale.
+        sensory_profile_ci = {}
+        for net, effs in network_effects.items():
+            arr = np.array(effs, dtype=np.float32)
+            if len(arr) <= 1:
+                # Single-ROI network — no within-network variance. Use mean vertex
+                # CI as proxy so bars still show a range.
+                ci_half = float(uncertainty.get("mean_ci_width", 0.05)) / 2.0 / max_p
+            else:
+                # Standard error of the mean: std / sqrt(n). Use 1.96·SE as half-CI.
+                ci_half = float(1.96 * np.std(arr, ddof=1) / np.sqrt(len(arr))) / max_p
+            center = profile[net]
+            sensory_profile_ci[net] = {
+                "mean": center,
+                "lower": max(0.0, center - ci_half),
+                "upper": min(1.0, center + ci_half),
+                "half_width": ci_half,
+                "n_rois": len(arr),
+            }
 
         # Apply per-person calibration if provided
         calibration_info = None
@@ -453,6 +475,7 @@ async def compare_models(
             "status": "real",
             "stimulus_text": text,
             "sensory_profile": profile,
+            "sensory_profile_ci": sensory_profile_ci,
             "divergence_stats": {
                 "mean": float(divergence.mean()),
                 "max": float(divergence.max()),

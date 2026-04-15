@@ -60,7 +60,7 @@ function ThemeToggle() {
     localStorage.setItem("theme", next);
   };
   return (
-    <button onClick={toggle} aria-label="Toggle theme" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition text-[var(--muted)] hover:text-[var(--text)]">
+    <button onClick={toggle} aria-label="Toggle theme" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-subtle transition text-[var(--muted)] hover:text-[var(--text)]">
       {theme === "dark" ? (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
       ) : (
@@ -82,7 +82,7 @@ function Nav() {
     { href: "https://mind.new/paper", label: "Paper" },
   ];
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${s || open ? "bg-[#050507]/80 backdrop-blur-xl border-b border-[var(--border)]" : ""}`}>
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${s || open ? "nav-bg backdrop-blur-xl border-b border-[var(--border)]" : ""}`}>
       <div className="max-w-[1024px] mx-auto px-6 h-14 flex items-center justify-between">
         <a href="https://mind.new" className="flex items-center gap-2">
           <span className="text-[15px] font-medium tracking-tight">
@@ -91,12 +91,12 @@ function Nav() {
           </span>
         </a>
         <div className="hidden md:flex items-center gap-7 text-[13px] text-[var(--muted)]">
-          {links.map((l) => <a key={l.href} href={l.href} className="hover:text-white transition">{l.label}</a>)}
+          {links.map((l) => <a key={l.href} href={l.href} className="hover:text-[var(--heading)] transition">{l.label}</a>)}
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <span className="hidden sm:inline text-[13px] px-4 py-1.5 rounded-full border border-white/10 text-[var(--muted)]">neuro.mind.new</span>
-          <button onClick={() => setOpen(!open)} className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/5 transition" aria-label="Menu">
+          <span className="hidden sm:inline text-[13px] px-4 py-1.5 rounded-full border border-medium text-[var(--muted)]">neuro.mind.new</span>
+          <button onClick={() => setOpen(!open)} className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-subtle transition" aria-label="Menu">
             {open ? (
               <svg className="w-5 h-5 text-[var(--text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" /></svg>
             ) : (
@@ -106,11 +106,11 @@ function Nav() {
         </div>
       </div>
       {open && (
-        <div className="md:hidden border-t border-[var(--border)] bg-[#050507]/95 backdrop-blur-xl">
+        <div className="md:hidden border-t border-[var(--border)] nav-bg-solid backdrop-blur-xl">
           <div className="max-w-[1024px] mx-auto px-6 py-4 flex flex-col gap-1">
             {links.map((l) => (
               <a key={l.href} href={l.href} onClick={() => setOpen(false)}
-                className="text-[14px] text-[var(--muted)] hover:text-white py-2.5 px-3 rounded-lg hover:bg-white/5 transition font-light">
+                className="text-[14px] text-[var(--muted)] hover:text-[var(--heading)] py-2.5 px-3 rounded-lg hover:bg-subtle transition font-light">
                 {l.label}
               </a>
             ))}
@@ -139,12 +139,12 @@ function Hero({ onExplore }: { onExplore: () => void }) {
           responses, and explore how autism shapes neural connectivity.
         </p>
         <div className="flex items-center gap-3 mt-7">
-          <button onClick={onExplore} className="text-[13px] px-5 py-2 rounded-full bg-white text-[#050507] font-medium hover:bg-white/90 transition">Start Exploring</button>
-          <a href="https://mind.new/paper" className="text-[13px] px-5 py-2 rounded-full border border-white/10 text-[var(--text)] hover:border-white/20 transition">Read the Paper</a>
+          <button onClick={onExplore} className="text-[13px] px-5 py-2 rounded-full cta-primary font-medium transition">Start Exploring</button>
+          <a href="https://mind.new/paper" className="text-[13px] px-5 py-2 rounded-full border border-medium text-[var(--text)] hover:border-medium transition">Read the Paper</a>
         </div>
         <div className="grid grid-cols-2 sm:flex sm:gap-8 gap-4 mt-10 pt-5 border-t border-[var(--border)]">
           {[["177M", "parameters"], ["20,484", "vertices"], ["1,545", "subjects"], ["1,002", "connections"]].map(([n, l]) => (
-            <div key={l}><div className="text-[16px] sm:text-[18px] font-medium text-white tabular-nums">{n}</div><div className="text-[10px] text-[var(--muted)] mt-0.5">{l}</div></div>
+            <div key={l}><div className="text-[16px] sm:text-[18px] font-medium text-[var(--heading)] tabular-nums">{n}</div><div className="text-[10px] text-[var(--muted)] mt-0.5">{l}</div></div>
           ))}
         </div>
       </div>
@@ -189,10 +189,10 @@ function Workspace({ tab, setTab }: { tab: TabId; setTab: (t: TabId) => void }) 
         <p className="reveal reveal-delay-1 text-[14px] text-[var(--muted)] mb-8 font-light">Interact with the brain model in real-time.</p>
 
         {/* Tabs */}
-        <div className="reveal reveal-delay-2 flex gap-1 p-1 rounded-lg bg-white/[0.03] border border-[var(--border)] inline-flex mb-8">
+        <div className="reveal reveal-delay-2 flex gap-1 p-1 rounded-lg bg-subtle border border-[var(--border)] inline-flex mb-8">
           {(["predict", "compare", "connectivity"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`text-[12px] px-4 py-2 rounded-md transition ${tab === t ? "bg-white/10 text-white" : "text-[var(--muted)] hover:text-white"}`}>
+              className={`text-[12px] px-4 py-2 rounded-md transition ${tab === t ? "bg-subtle-strong text-[var(--heading)]" : "text-[var(--muted)] hover:text-[var(--heading)]"}`}>
               {t === "predict" ? "Predict" : t === "compare" ? "NT vs ND" : "Connectivity"}
             </button>
           ))}
@@ -233,7 +233,7 @@ function PredictSection() {
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
           className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg p-3 text-[14px] font-light focus:outline-none focus:border-[var(--accent)]/30 resize-none" />
         <button onClick={handlePredict} disabled={loading || !text.trim()}
-          className="mt-3 w-full py-2.5 rounded-lg bg-white text-[#050507] font-medium text-[13px] hover:bg-white/90 disabled:opacity-40 transition">
+          className="mt-3 w-full py-2.5 rounded-lg cta-primary font-medium text-[13px] disabled:opacity-40 transition">
           {loading ? "Processing..." : "Predict Brain Activity"}
         </button>
       </div>
@@ -242,7 +242,7 @@ function PredictSection() {
         <div className="card p-5">
           <div className="grid grid-cols-3 gap-4 text-center">
             {[[stats.timesteps, "Timesteps"], [stats.vertices?.toLocaleString(), "Vertices"], [stats.mean_activation?.toFixed(4), "Mean Activation"]].map(([v, l]) => (
-              <div key={String(l)}><div className="text-[18px] font-medium text-white tabular-nums">{v}</div><div className="text-[10px] text-[var(--muted)] mt-0.5">{l}</div></div>
+              <div key={String(l)}><div className="text-[18px] font-medium text-[var(--heading)] tabular-nums">{v}</div><div className="text-[10px] text-[var(--muted)] mt-0.5">{l}</div></div>
             ))}
           </div>
         </div>
@@ -283,17 +283,17 @@ function CompareSection() {
         {/* Age band selector */}
         <div className="flex items-center gap-3 mt-3">
           <label className="text-[11px] text-[var(--muted)]">Age band:</label>
-          <div className="flex gap-1 p-0.5 rounded-lg bg-white/[0.03] border border-[var(--border)]">
+          <div className="flex gap-1 p-0.5 rounded-lg bg-subtle border border-[var(--border)]">
             {[{ v: "", l: "All ages" }, { v: "child", l: "Child (0-12)" }, { v: "adolescent", l: "Adolescent (12-18)" }, { v: "adult", l: "Adult (18+)" }].map((o) => (
               <button key={o.v} onClick={() => setAgeBand(o.v)}
-                className={`text-[10px] px-2.5 py-1 rounded-md transition ${ageBand === o.v ? "bg-white/10 text-white" : "text-[var(--muted)] hover:text-white"}`}>
+                className={`text-[10px] px-2.5 py-1 rounded-md transition ${ageBand === o.v ? "bg-subtle-strong text-[var(--heading)]" : "text-[var(--muted)] hover:text-[var(--heading)]"}`}>
                 {o.l}
               </button>
             ))}
           </div>
         </div>
         <button onClick={handleCompare} disabled={loading || !text.trim()}
-          className="mt-3 w-full py-2.5 rounded-lg bg-white text-[#050507] font-medium text-[13px] hover:bg-white/90 disabled:opacity-40 transition">
+          className="mt-3 w-full py-2.5 rounded-lg cta-primary font-medium text-[13px] disabled:opacity-40 transition">
           {loading ? "Comparing..." : "Compare Brains"}
         </button>
       </div>
@@ -329,29 +329,39 @@ function CompareSection() {
           <div className="space-y-3">
             {Object.entries(result.sensory_profile as Record<string, number>).sort(([,a],[,b]) => b - a).map(([k, v]) => {
               const pct = Math.round(v * 100);
-              const ciHalf = result.uncertainty?.mean_ci_width ? Math.round(result.uncertainty.mean_ci_width * 100 / 2) : 0;
-              const lo = Math.max(0, pct - ciHalf);
-              const hi = Math.min(100, pct + ciHalf);
+              // Prefer per-network CI from sensory_profile_ci; fall back to mean vertex CI
+              const perNetCI = result.sensory_profile_ci?.[k] as { lower: number; upper: number; half_width: number; n_rois: number } | undefined;
+              const lo = perNetCI
+                ? Math.max(0, Math.round(perNetCI.lower * 100))
+                : Math.max(0, pct - (result.uncertainty?.mean_ci_width ? Math.round(result.uncertainty.mean_ci_width * 100 / 2) : 0));
+              const hi = perNetCI
+                ? Math.min(100, Math.round(perNetCI.upper * 100))
+                : Math.min(100, pct + (result.uncertainty?.mean_ci_width ? Math.round(result.uncertainty.mean_ci_width * 100 / 2) : 0));
+              const ciHalf = perNetCI ? Math.round(perNetCI.half_width * 100) : 0;
               return (
                 <div key={k}>
                   <div className="flex justify-between text-[12px] mb-1">
-                    <span className="capitalize font-light">{k.replace("_", " ")}</span>
+                    <span className="capitalize font-light">
+                      {k.replace("_", " ")}
+                      {perNetCI && <span className="text-[var(--muted)] text-[9px] ml-1 font-light">({perNetCI.n_rois} ROIs)</span>}
+                    </span>
                     <span className="text-[var(--accent)] font-medium tabular-nums">
-                      {pct}%{ciHalf > 0 && <span className="text-[var(--muted)] font-light text-[10px]"> ({lo}–{hi})</span>}
+                      {pct}%
+                      {ciHalf > 0 && <span className="text-[var(--muted)] font-light text-[10px]"> ±{ciHalf}</span>}
                     </span>
                   </div>
-                  <div className="w-full h-[3px] bg-white/[0.04] rounded-full overflow-hidden relative">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] metric-grow" style={{ width: `${pct}%` }} />
-                    {ciHalf > 0 && (
-                      <div className="absolute top-0 h-full rounded-full bg-[var(--accent)]/10" style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
+                  <div className="w-full h-[3px] bg-subtle rounded-full overflow-hidden relative">
+                    {hi > lo && (
+                      <div className="absolute top-0 h-full bg-[var(--accent)]/15" style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
                     )}
+                    <div className="h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] metric-grow relative" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
             })}
           </div>
           <div className="mt-4 pt-3 border-t border-[var(--border)]">
-            <a href="/calibrate" className="text-[11px] text-[var(--accent)] hover:text-white transition font-medium">
+            <a href="/calibrate" className="text-[11px] text-[var(--accent)] hover:text-[var(--heading)] transition font-medium">
               Personalize with 5-min calibration →
             </a>
           </div>
@@ -363,7 +373,7 @@ function CompareSection() {
         <div className="bg-[var(--bg)] rounded-lg p-4 border border-[var(--border)] space-y-2">
           {result.age_info && (
             <p className="text-[11px] text-[var(--muted)] font-light">
-              Age band: <span className="text-white font-normal">{result.age_info.age_band}</span> &middot;
+              Age band: <span className="text-[var(--heading)] font-normal">{result.age_info.age_band}</span> &middot;
               {" "}{result.age_info.n_asd} ASD + {result.age_info.n_td} TD subjects
               {result.transform_version?.sig_fdr != null && (
                 <> &middot; {result.transform_version.sig_fdr} FDR-significant connections</>
@@ -377,7 +387,7 @@ function CompareSection() {
             </p>
           )}
           {result.disclaimer && (
-            <p className="text-[10px] text-[var(--muted)]/60 font-light italic">{result.disclaimer}</p>
+            <p className="text-[10px] text-[var(--muted)] font-light italic">{result.disclaimer}</p>
           )}
         </div>
       )}
@@ -408,7 +418,7 @@ function ConnectivitySection() {
         <h3 className="text-[16px] font-medium mb-2">ASD vs TD Brain Connectivity</h3>
         <p className="text-[13px] text-[var(--muted)] font-light mb-5">Compare how brain regions communicate differently in autism.</p>
         <button onClick={handleLoad} disabled={loading}
-          className="text-[13px] px-6 py-2.5 rounded-full bg-white text-[#050507] font-medium hover:bg-white/90 disabled:opacity-40 transition">
+          className="text-[13px] px-6 py-2.5 rounded-full cta-primary font-medium disabled:opacity-40 transition">
           {loading ? "Analyzing..." : "Run Analysis"}
         </button>
       </div>
@@ -429,7 +439,7 @@ function ConnectivitySection() {
               return (
                 <div key={net} className="flex items-center gap-4">
                   <div className="w-32 text-[12px] text-right text-[var(--muted)] font-light flex-shrink-0">{labels[net] || net}</div>
-                  <div className="flex-1 h-6 bg-white/[0.03] rounded overflow-hidden relative">
+                  <div className="flex-1 h-6 bg-subtle rounded overflow-hidden relative">
                     <div className="h-full rounded bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] metric-grow" style={{ width: `${pct}%` }} />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-white/60">{val.toFixed(4)}</span>
                   </div>
@@ -503,7 +513,7 @@ function Footer() {
           </div>
         </div>
         <div className="pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <p className="text-[10px] text-[var(--muted)]/60 leading-relaxed font-light max-w-md">AQAL is a research tool, not a diagnostic medical device. Predictions are population-level estimates.</p>
+          <p className="text-[10px] text-[var(--muted)] leading-relaxed font-light max-w-md">AQAL is a research tool, not a diagnostic medical device. Predictions are population-level estimates.</p>
           <p className="text-[10px] text-[var(--muted)]">© 2026 Leeza Care R&amp;D Foundation</p>
         </div>
       </div>
